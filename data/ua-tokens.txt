@@ -1,0 +1,35 @@
+# 允许的 AI 爬虫令牌（每行一个，# 为注释）
+# 训练爬虫
+GPTBot
+CCBot
+ClaudeBot
+meta-externalagent
+MistralAI-Training
+Amazonbot
+AI2Bot
+# 仅令牌控制（对已抓内容的训练授权）
+Google-Extended
+Applebot-Extended
+# 检索 / 引用
+OAI-SearchBot
+Claude-SearchBot
+PerplexityBot
+Perplexity-User
+MistralAI-Index
+meta-webindexer
+Amzn-SearchBot
+DuckAssistBot
+YouBot
+Googlebot
+bingbot
+GoogleOther
+Applebot
+# 用户触发抓取
+ChatGPT-User
+Claude-User
+MistralAI-User
+Amzn-User
+meta-externalfetcher
+# 不读 robots.txt，列出仅作立场声明
+Bytespider
+Diffbot

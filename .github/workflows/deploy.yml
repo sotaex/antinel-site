@@ -1,0 +1,98 @@
+name: build-and-deploy
+
+# 唯一发布通道：推 main 即构建、即校验、即发布。
+# 构建失败（判据红了）就不发布 —— 宁可旧站还在，也不上错站。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # 项目页地址：https://sotaex.github.io/antinel-site
+  # 换自定义域时把 SITE_URL 改成 https://antinel.com、BASE_PATH 改成 /，并设 SITE_DOMAIN
+  SITE_URL: https://sotaex.github.io
+  BASE_PATH: /antinel-site
+  PYTHONIOENCODING: utf-8
+  PYTHONUTF8: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 环境自述
+        run: |
+          python -V
+          echo "SITE_URL=$SITE_URL BASE_PATH=$BASE_PATH"
+          python -c "import sys; print('stdlib only, no pip install step')"
+
+      - name: 判据检查（红即停）
+        run: python gen.py --check
+
+      - name: 构建
+        run: python gen.py
+
+      - name: 产物自检
+        run: |
+          set -e
+          test -f site-output/index.html
+          test -f site-output/404.html
+          test -f site-output/llms.txt
+          test -f site-output/robots.txt
+          test -f site-output/sitemap.xml
+          test -f site-output/.nojekyll
+          # 子路径部署时站内链接必须带前缀，抽查三处
+          grep -q "/antinel-site/assets/site.css" site-output/index.html
+          grep -q "/antinel-site/llms.txt" site-output/index.html
+          echo "产物文件数：$(find site-output -type f | wc -l)"
+          echo "产物体积：$(du -sh site-output | cut -f1)"
+
+      - uses: actions/configure-pages@v5
+        with:
+          # 仓库首次推送时 Pages 还没开。这一行让流水线自己把 Pages 打开
+          # （build_type=workflow），不需要人去设置页点一下。
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site-output
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: 线上回访（发布后自检）
+        run: |
+          set -e
+          base="${{ steps.deployment.outputs.page_url }}"
+          echo "站点：$base"
+          for p in "" "facts/" "rules/" "docs/install/" "llms.txt" "robots.txt" "sitemap.xml"; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "${base}${p}")
+            echo "  ${code}  ${p:-（首页）}"
+            test "$code" = "200"
+          done
+          # 404 页必须存在（GitHub Pages 会用它）
+          code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "${base}no-such-page-xyz/")
+          echo "  404 探测：$code（应为 404）"
+          test "$code" = "404"

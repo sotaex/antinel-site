@@ -1,0 +1,18 @@
+# 构建产物：由 CI 每次现建，不进仓（进了仓就会有人手改，然后被下次构建覆盖）
+site-output/
+site-output.prev/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 系统垃圾
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 内部工作件：不进公开仓（含本机路径、设计推演、密钥配置步骤）
+_preflight/
+site-spec/
+*.bat
