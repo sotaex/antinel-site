@@ -76,6 +76,21 @@ def _md_target(url):
     return (p or "/").rstrip("/") or "/"
 
 
+def _contrast(fg, bg):
+    """WCAG 相对亮度对比度。"""
+    def lum(h):
+        h = h.lstrip("#")
+        ch = [int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
+
+        def f(c):
+            return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+        return 0.2126 * f(ch[0]) + 0.7152 * f(ch[1]) + 0.0722 * f(ch[2])
+
+    a, b = lum(fg), lum(bg)
+    hi, lo = max(a, b), min(a, b)
+    return (hi + 0.05) / (lo + 0.05)
+
+
 def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=None):
     results = []
     by_path = {p["path"]: p for p in pages}
@@ -345,6 +360,31 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
     # J-22 无占位页
     stubs = [p["path"] for p in pages if "callout stub" in p["html"]]
     add("J-22", not stubs, "占位页 %d%s" % (len(stubs), ("：" + "、".join(stubs[:5])) if stubs else ""))
+
+    # J-23 文字对比度（WCAG AA 4.5:1）。人眼估不出来，所以量出来。
+    low = []
+    try:
+        css = open(os.path.join(C.DIR_ASSETS, "site.css"), encoding="utf-8").read()
+        blocks = re.findall(r":root\s*\{(.*?)\}", css, re.S)
+        vars_ = {}
+        for i, b in enumerate(blocks):
+            d = dict(re.findall(r"(--[\w-]+)\s*:\s*(#[0-9a-fA-F]{6})", b))
+            vars_[i] = d
+        light, dark = vars_.get(0, {}), vars_.get(1, vars_.get(0, {}))
+        for mode, d in (("浅色", light), ("深色", dark)):
+            bg = d.get("--paper", "#ffffff")
+            for name in ("--ink", "--ink-2", "--ink-3", "--accent", "--warn"):
+                fg = d.get(name)
+                if not fg:
+                    continue
+                r = _contrast(fg, bg)
+                if r < 4.5:
+                    low.append("%s %s=%.2f" % (mode, name, r))
+    except Exception as e:
+        low.append("读不出配色：%s" % type(e).__name__)
+    add("J-23", not low, "低于 4.5:1 的 %d 项%s"
+        % (len(low), ("：" + "、".join(low[:4])) if low else ""))
+
 
     failed = [r for r in results if not r["ok"]]
     return {"results": results, "failed": len(failed),

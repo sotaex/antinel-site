@@ -4,7 +4,7 @@
 :root {
   --ink: #10151c;
   --ink-2: #3d4753;
-  --ink-3: #6b7785;
+  --ink-3: #5f6a78;   /* 对 #fbfbfa 的对比度 5.31:1（WCAG AA 需 4.5） */
   --paper: #fbfbfa;
   --panel: #ffffff;
   --line: #e3e5e2;

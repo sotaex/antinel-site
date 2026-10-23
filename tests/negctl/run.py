@@ -232,6 +232,11 @@ def n20():
     rename_away("content/gates.md")
 
 
+def n21():
+    """次要文字调淡到对比度不足。"""
+    patch("assets/site.css", "--ink-3: #5f6a78;", "--ink-3: #b9bfc6;")
+
+
 def _resha():
     import hashlib
     p = os.path.join(RUN, "data", "sources", "rules.default.json")
@@ -259,6 +264,7 @@ CONTROLS = [
     ("N-18", "J-20", "宿主登记少一类", n18),
     ("N-19", "J-21", "待发布数据集被换成另一份", n19),
     ("N-20", "J-22", "正文缺失留成占位页", n20),
+    ("N-21", "J-23", "次要文字调淡到对比度不足", n21),
 ]
 
 

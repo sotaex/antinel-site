@@ -1,9 +1,9 @@
 {
   "schema": "antinel-site-negctl/1",
-  "ran": 20,
-  "total": 20,
-  "pass": 20,
-  "baseline_criteria": 21,
+  "ran": 21,
+  "total": 21,
+  "pass": 21,
+  "baseline_criteria": 22,
   "note": "每条三步：基线全绿 → 注入后目标判据变红 → 还原后全绿",
   "details": [
     {
@@ -24,7 +24,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "H1=1 组=0 链接=59 死链=0 字节=7430"
+      "detail": "H1=1 组=0 链接=60 死链=0 字节=7607"
     },
     {
       "id": "N-03",
@@ -205,6 +205,16 @@
       "red_ok": true,
       "restore_ok": true,
       "detail": "占位页 1：/gates/"
+    },
+    {
+      "id": "N-21",
+      "criterion": "J-23",
+      "desc": "次要文字调淡到对比度不足",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "低于 4.5:1 的 1 项：浅色 --ink-3=1.79"
     }
   ]
 }
