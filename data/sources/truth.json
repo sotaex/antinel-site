@@ -1,6 +1,6 @@
 {
   "schema": "antinel-truth/1",
-  "captured_at": "2026-10-24T00:17:32+08:00",
+  "captured_at": "2026-10-24T06:42:49+08:00",
   "src_path": "D:\\psl\\poc\\antinel-security",
   "product_version": "0.55.3",
   "rules_version": "0.55.3",
@@ -1513,6 +1513,32 @@
       "roots": [],
       "evidence_count": 0
     }
+  ],
+  "hosts_files": [
+    "autoclaw.json",
+    "claude-code.json",
+    "codebuddy.json",
+    "codex.json",
+    "copilot.json",
+    "cursor.json",
+    "doubao.json",
+    "gemini-cli.json",
+    "ichat.json",
+    "kimi.json",
+    "lingma.json",
+    "mimocode.json",
+    "openclaw.json",
+    "qoder-cn.json",
+    "qoder.json",
+    "qwen-agent.json",
+    "tabbit.json",
+    "trae-cn.json",
+    "trae-solo.json",
+    "trae.json",
+    "vscode.json",
+    "workbuddy.json",
+    "yuanbao.json",
+    "zcode.json"
   ],
   "selfproof": {
     "assertions": 323,

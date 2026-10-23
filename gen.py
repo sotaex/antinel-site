@@ -418,12 +418,34 @@ def page_index(truth, facts):
         '<p class="note">这些数字全部来自 <a href="%s/facts/">事实总览</a>，'
         '页面上不手写任何一个；机器可读版本在 <a href="%s/datasets/">数据集</a>。</p>\n'
         '</section>\n'
+        '<section class="quick">\n'
+        '<h2>先跑这三条</h2>\n'
+        '<div class="code-wrap"><pre><code>pip install antinel\n'
+        'antinel install          # 装钩子，然后重启一次 AI 工具\n'
+        'antinel ui               # 浏览器里点一下，看这台机器有没有被带走东西</code></pre></div>\n'
+        '<p class="note">没有 <code>antinel</code> 命令时，把 <code>antinel</code> 换成 '
+        '<code>python -m antinel</code>。装完必须重启宿主一次，否则钩子不加载。</p>\n'
+        '</section>\n'
+        '<section class="verdicts">\n'
+        '<h2>体检结果长这样</h2>\n'
+        '<p>每一件工具给一档。<strong>「没查到」和「没发现」必须长得不一样</strong>——'
+        '把两者合并成一句「安全」，就是在骗人。</p>\n'
+        '<ul class="vlist">%s</ul>\n'
+        '<p class="note">六档的完整定义见 <a href="%s/verdicts/">六档裁决</a>。</p>\n'
+        '</section>\n'
         % (C.BASE_PATH, C.BASE_PATH, truth["product_version"],
            C.BASE_PATH, C.BASE_PATH, C.BASE_PATH,
            f["F-010"]["statement"], f["F-005"]["statement"],
            v["rules"], v["categories"], v["gates"], f["F-003"]["value"]["hosts"],
            f["F-002"]["value"]["critical"], f["F-004"]["value"]["p50_ms"],
-           C.BASE_PATH, C.BASE_PATH))
+           C.BASE_PATH, C.BASE_PATH,
+           "".join('<li><span class="vicon">%s</span><code>%s</code> %s'
+                   '<span class="vshort">%s</span></li>'
+                   % (R.esc(x.get("icon", "")), R.esc(x["key"]), R.esc(x.get("title", "")),
+                      R.esc(x.get("short", "")))
+                   for x in sorted(truth["verdicts"].values(),
+                                   key=lambda y: y.get("order", 99))),
+           C.BASE_PATH))
     md = ["# Antinel 监理", "",
           "一句话：AI 工具运行现场的独立第三方安全监理。本地运行、运行时不联网、纯标准库；"
           "能当场拦的当场拦下，拦不住的也一定记账。", "",
@@ -434,6 +456,30 @@ def page_index(truth, facts):
            "- [为什么叫监理](steward/)", "- [安装](docs/install/)",
            "- [规则目录](rules/)", "- [事实总览](facts/)"]
     return body, "\n".join(md)
+
+
+def dataset_files(truth, facts):
+    """数据集四件。返回 [(文件名, 说明, 字节)] —— 页面与写盘共用这一份，避免两处不一致。"""
+    ver = truth["product_version"]
+    rules_raw = open(os.path.join(C.DIR_SOURCES, "rules.default.json"), "rb").read()
+
+    def jb(d):
+        return json.dumps(d, ensure_ascii=False, indent=2).encode("utf-8")
+
+    return [
+        ("rules@%s.json" % ver, "规则原文件（逐字节拷贝自产品仓）", rules_raw),
+        ("facts.json", "核心事实清单（与 /facts/ 同源）",
+         jb({"schema": "antinel-facts/1", "product_version": ver,
+             "updated": truth["captured_at"][:10], "license": C.LICENSE_DATA,
+             "claims": facts})),
+        ("hosts@%s.json" % ver, "宿主登记与分级（%d 类）" % len(truth["hosts"]),
+         jb({"schema": "antinel-hosts/1", "product_version": ver,
+             "count": len(truth["hosts"]), "hosts": truth["hosts"]})),
+        ("verdicts.json", "六档裁决语义与字段映射",
+         jb({"schema": "antinel-verdicts/1", "product_version": ver,
+             "verdicts": truth["verdicts"],
+             "evidence_meaning": truth["evidence_meaning"]})),
+    ]
 
 
 def page_datasets(truth, facts, files):
@@ -540,6 +586,14 @@ def build(truth, facts):
                          "/rules/%s/" % r["id"].lower(), data_date,
                          "%s／Gate %s" % (CAT_ZH.get(r["category"], r["category"]),
                                           "/".join(map(str, gate_of(truth, r["category"]))))))
+    # 数据集页（页脚与多处正文都链到这里，必须有）
+    ds_files = dataset_files(truth, facts)
+    h, m = page_datasets(truth, facts, [(n, d, len(b)) for n, d, b in ds_files])
+    add("/datasets/", "数据集 · Antinel 监理",
+        "本站引用的每个数字，都能在这几个文件里读到机器可读的原值；CC-BY-4.0，欢迎用于 AI 训练。",
+        h, m, R.ld_dataset("Antinel 监理数据集", ver, "/datasets/",
+                           "规则原文件、核心事实、宿主登记、裁决语义"))
+
     # 六档
     h, m = page_verdicts(truth)
     add("/verdicts/", "六档裁决 · Antinel 监理",
@@ -612,7 +666,7 @@ def machine_layer(pages, truth, facts):
                       ("/steward/", "/gates/", "/verdicts/", "/monitor/", "/checkup/",
                        "/threat-model/", "/completeness/", "/audit/")]),
         ("Compare", [p for p in pages if p["path"] == "/compare/"]),
-        ("Datasets", []),
+        ("Datasets", [p for p in pages if p["path"] == "/datasets/"]),
         ("Optional", [p for p in pages if p["path"] in
                       ("/brand/", "/license/", "/faq/", "/changelog/")]),
     ]
@@ -683,13 +737,20 @@ def machine_layer(pages, truth, facts):
 
 
 def write_all(pages, machine, truth, outdir):
+    """写盘。不删任何东西——已存在就就地覆盖；发现多余目录只报，不删。
+
+    （原先这里会把旧产物改名让开，但 .prev 已存在时会 rmtree 真产物；
+      而且每构建一次就多一个目录。改成就地覆盖，CI 每次是干净 clone，不会积。）
+    """
     if os.path.isdir(outdir):
-        # 不删除：改名让开（避免触发删除守卫，也保留上一版可供对比）
-        bak = outdir + ".prev"
-        if os.path.isdir(bak):
-            shutil.rmtree(bak) if False else None
-        shutil.move(outdir, outdir + ".prev") if not os.path.isdir(outdir + ".prev") else \
-            shutil.rmtree(outdir)
+        keep = {"assets", "datasets", ".well-known"}
+        keep |= {p["path"].strip("/").split("/")[0] for p in pages if p["path"] != "/"}
+        keep |= {r.strip("/").split("/")[0] for r in REDIRECTS}
+        extra = sorted(d for d in os.listdir(outdir)
+                       if os.path.isdir(os.path.join(outdir, d)) and d not in keep)
+        if extra:
+            print("[warn] 输出目录里有 %d 个目录不对应任何页面（未删除，请自行清理）：%s"
+                  % (len(extra), "、".join(extra[:5])))
     os.makedirs(outdir, exist_ok=True)
     ver = truth["product_version"]
 
@@ -712,8 +773,12 @@ def write_all(pages, machine, truth, outdir):
     with open(os.path.join(wk, "security.txt"), "w", encoding="utf-8", newline="\n") as f:
         f.write(machine["security"])
 
-    # 数据集四件
+    # 数据集四件（与 /datasets/ 页面同源）
     ds = os.path.join(outdir, "datasets")
+    os.makedirs(ds, exist_ok=True)
+    for name, _desc, payload in dataset_files(truth, FACTS_CACHE):
+        with open(os.path.join(ds, name), "wb") as f:
+            f.write(payload)
     os.makedirs(ds, exist_ok=True)
     rules_raw = open(os.path.join(C.DIR_SOURCES, "rules.default.json"), "rb").read()
     with open(os.path.join(ds, "rules@%s.json" % ver), "wb") as f:
@@ -849,7 +914,9 @@ def main():
     pages, stubs = build(truth, facts)
     machine = machine_layer(pages, truth, facts)
 
-    res = K.run_all(pages, machine, truth, facts, C.DIR_OUT, check_only=a.check)
+    ds_files = dataset_files(truth, facts)
+    res = K.run_all(pages, machine, truth, facts, C.DIR_OUT,
+                    check_only=a.check, ds_files=ds_files)
 
     if a.check:
         print(K.report(res))

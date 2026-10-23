@@ -62,11 +62,12 @@ def refresh():
     const = json.loads(out.stdout.strip().splitlines()[-1])
 
     # 宿主登记：只认 *.json（目录里有 .trash 残留，不能数文件个数）
-    hosts = []
+    hosts, hosts_files = [], []
     hd = os.path.join(src, "rules", "hosts")
     for fn in sorted(os.listdir(hd)):
         if not fn.endswith(".json"):
             continue
+        hosts_files.append(fn)
         d = json.load(open(os.path.join(hd, fn), encoding="utf-8"))
         hosts.append({
             "key": d.get("host") or fn[:-5],
@@ -109,6 +110,7 @@ def refresh():
         "verdicts": const["VERDICTS"],
         "evidence_meaning": const["EVIDENCE_MEANING"],
         "hosts": hosts,
+        "hosts_files": hosts_files,
         "selfproof": selfproof,
     }
 

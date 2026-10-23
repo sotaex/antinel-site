@@ -56,7 +56,7 @@ def ld_software(version, desc):
         "@type": "SoftwareApplication",
         "name": "Antinel 监理 (AgentState by Antinel)",
         "applicationCategory": "SecurityApplication",
-        "operatingSystem": "Windows, macOS, Linux",
+        "operatingSystem": "Windows",   # 第一版只验证了 Windows；别写没测过的平台
         "softwareVersion": version,
         "description": desc,
         "license": "https://opensource.org/licenses/Apache-2.0",

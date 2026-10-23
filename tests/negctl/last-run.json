@@ -1,0 +1,210 @@
+{
+  "schema": "antinel-site-negctl/1",
+  "ran": 20,
+  "total": 20,
+  "pass": 20,
+  "baseline_criteria": 21,
+  "note": "每条三步：基线全绿 → 注入后目标判据变红 → 还原后全绿",
+  "details": [
+    {
+      "id": "N-01",
+      "criterion": "J-02",
+      "desc": "robots 少一条爬虫令牌",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "令牌 28 个，缺 0 个，必备缺 1 个：GPTBot"
+    },
+    {
+      "id": "N-02",
+      "criterion": "J-03",
+      "desc": "llms.txt 少一个分组",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "H1=1 组=0 链接=59 死链=0 字节=7430"
+    },
+    {
+      "id": "N-03",
+      "criterion": "J-04",
+      "desc": "页面缺 .md 镜像链接",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "页 61，异常 61：/(缺link)、/facts/(缺link)、/rules/(缺link)"
+    },
+    {
+      "id": "N-04",
+      "criterion": "J-05",
+      "desc": "正文插入零宽空格",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "命中 3 处：/steward/.html U+200B；/steward/.md U+200B；llms-full U+200B"
+    },
+    {
+      "id": "N-05",
+      "criterion": "J-06",
+      "desc": "核心数字与事实不一致",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "冲突 1 处：/compare/ 「36 条护盾规则」≠37"
+    },
+    {
+      "id": "N-06",
+      "criterion": "J-07",
+      "desc": "两页标题撞名",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "重名 title 1｜H1 数异常 0｜缺 lead 0"
+    },
+    {
+      "id": "N-07",
+      "criterion": "J-08",
+      "desc": "sitemap 多一条幽灵地址",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "sitemap 62 条，页 61 条，差 1"
+    },
+    {
+      "id": "N-08",
+      "criterion": "J-09",
+      "desc": "md 镜像缺 front-matter 字段",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "异常 61：/(front-matter 缺字段)、/facts/(front-matter 缺字段)、/rules/(front-matter 缺字段)"
+    },
+    {
+      "id": "N-09",
+      "criterion": "J-10",
+      "desc": "JSON-LD 用了未登记类型",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "异常 58：/facts/(@type=Thing)、/rules/(@type=Thing)、/rules/sec-01/(@type=Thing)"
+    },
+    {
+      "id": "N-10",
+      "criterion": "J-11",
+      "desc": "真源少一条规则",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "规则页 37／真源 37，缺 0，要素缺 37"
+    },
+    {
+      "id": "N-11",
+      "criterion": "J-12",
+      "desc": "引用块缺指纹",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "异常 61：/ 缺 sha256:b71e5、/facts/ 缺 sha256:b71e5、/rules/ 缺 sha256:b71e5"
+    },
+    {
+      "id": "N-12",
+      "criterion": "J-13",
+      "desc": "规则镜像改一字节（应在装载时就 BLOCKED）",
+      "inject_ok": true,
+      "expect": "blocked",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "装载阶段 BLOCKED（rc=2）"
+    },
+    {
+      "id": "N-13",
+      "criterion": "J-14a",
+      "desc": "正文指向不存在页面",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "死链 1：/compare/ → /no-such-page/"
+    },
+    {
+      "id": "N-14",
+      "criterion": "J-15",
+      "desc": "llms-full 少拼一页",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "103 KB｜段 60／页 61｜头部说明 6 行"
+    },
+    {
+      "id": "N-15",
+      "criterion": "J-17",
+      "desc": "正文写死旧版本号",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "异版本 2 处：/brand/:0.55.2、机读层:0.55.2"
+    },
+    {
+      "id": "N-16",
+      "criterion": "J-18",
+      "desc": "自证断言数被改",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "原文解析 323 断言／21 摘要；快照 999／21；F-007 999／21"
+    },
+    {
+      "id": "N-17",
+      "criterion": "J-19",
+      "desc": "门归属被写死",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "不符 33：SEC-01 页 [1]≠源 [2]；SEC-02 页 [1]≠源 [2]；SEC-03 页 [1]≠源 [2]"
+    },
+    {
+      "id": "N-18",
+      "criterion": "J-20",
+      "desc": "宿主登记少一类",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "登记文件 24 个／解析 23 类／F-003 写 23"
+    },
+    {
+      "id": "N-19",
+      "criterion": "J-21",
+      "desc": "待发布数据集被换成另一份",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "锁 aa6115f84cc9… ｜ 待发布 63b349d5733c…"
+    },
+    {
+      "id": "N-20",
+      "criterion": "J-22",
+      "desc": "正文缺失留成占位页",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "占位页 1：/gates/"
+    }
+  ]
+}

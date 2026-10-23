@@ -76,7 +76,7 @@ def _md_target(url):
     return (p or "/").rstrip("/") or "/"
 
 
-def run_all(pages, machine, truth, facts, outdir, check_only=False):
+def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=None):
     results = []
     by_path = {p["path"]: p for p in pages}
     ver = truth["product_version"]
@@ -92,13 +92,17 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False):
         % (len(pages), len(facts), len(truth["rules"]), len(machine["llms"])))
 
     # J-02 robots 覆盖全部令牌 + Sitemap 行
+    # 光比对「文件里的令牌都在 robots 里」是同源自证：把行删掉，两边一起少，永远绿。
+    # 所以另设一份必须存在的知名 AI 爬虫清单 —— 删行会立刻红。
+    REQUIRED_UA = {"GPTBot", "ClaudeBot", "Google-Extended", "CCBot", "Bytespider"}
     ua = [l.strip() for l in open(os.path.join(C.DIR_DATA, "ua-tokens.txt"),
                                   encoding="utf-8").read().splitlines()
           if l.strip() and not l.strip().startswith("#")]
     missing = [t for t in ua if ("User-agent: " + t) not in machine["robots"]]
-    add("J-02", not missing and "Sitemap: " in machine["robots"],
-        "令牌 %d 个，缺 %d 个%s" % (len(ua), len(missing),
-                                  ("：" + "、".join(missing[:3])) if missing else ""))
+    lost = sorted(REQUIRED_UA - set(ua))
+    add("J-02", not missing and not lost and "Sitemap: " in machine["robots"],
+        "令牌 %d 个，缺 %d 个，必备缺 %d 个%s"
+        % (len(ua), len(missing), len(lost), ("：" + "、".join(lost)) if lost else ""))
 
     # J-03 llms.txt 格式
     L = machine["llms"]
@@ -287,13 +291,21 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False):
             bad.append("机读层:%s" % m.group(0))
     add("J-17", not bad, "异版本 %d 处%s" % (len(bad), ("：" + "、".join(bad[:3])) if bad else ""))
 
-    # J-18 自证数字同源
+    # J-18 自证数字同源：从 raw 原文重新解析，与结构化字段对照。
+    # （旧版拿 assertions 比 assertions_total，两个值同源，永远绿 —— 假守卫。）
+    sp = truth["selfproof"]
+    raw = sp.get("raw") or ""
+    ma = re.search(r"assertions\s+(\d+)\s*/\s*(\d+)", raw)
+    md_ = re.search(r"(\d+)\s*/\s*(\d+)\s+digests", raw)
+    parsed_a = int(ma.group(2)) if ma else None
+    parsed_d = int(md_.group(2)) if md_ else None
     f7 = [c for c in facts if c["id"] == "F-007"][0]["value"]
-    add("J-18", f7["assertions"] == truth["selfproof"]["assertions_total"]
-        and f7["digests"] == truth["selfproof"]["digests"],
-        "F-007 断言 %s／摘要 %s；SKILL.md 解析 %s／%s"
-        % (f7["assertions"], f7["digests"], truth["selfproof"]["assertions_total"],
-           truth["selfproof"]["digests"]))
+    add("J-18", parsed_a is not None and parsed_d is not None
+        and parsed_a == sp.get("assertions_total") == f7["assertions"]
+        and parsed_d == sp.get("digests") == f7["digests"],
+        "原文解析 %s 断言／%s 摘要；快照 %s／%s；F-007 %s／%s"
+        % (parsed_a, parsed_d, sp.get("assertions_total"), sp.get("digests"),
+           f7["assertions"], f7["digests"]))
 
     # J-19 门归属同源
     bad = []
@@ -309,14 +321,26 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False):
             bad.append("%s 页 %s≠源 %s" % (r["id"], got, want))
     add("J-19", not bad, "不符 %d%s" % (len(bad), ("：" + "；".join(bad[:3])) if bad else ""))
 
-    # J-20 宿主计数
-    add("J-20", len(truth["hosts"]) == rv["F-003"]["hosts"],
-        "快照宿主 %d，F-003 写 %d" % (len(truth["hosts"]), rv["F-003"]["hosts"]))
+    # J-20 宿主计数：拿快照里的文件清单当独立锚。
+    # （旧版拿 len(hosts) 比 F-003，而 F-003 就是从 hosts 算出来的 —— 假守卫。）
+    files = truth.get("hosts_files")
+    add("J-20", bool(files) and len(truth["hosts"]) == len(files)
+        == rv["F-003"]["hosts"],
+        "登记文件 %s 个／解析 %d 类／F-003 写 %d"
+        % (len(files) if files else "?", len(truth["hosts"]), rv["F-003"]["hosts"]))
 
-    # J-21 快照可验
-    add("J-21", hashlib.sha256(src).hexdigest() == truth["rules_sha256"],
-        "锁 %s… 实际 %s…" % (truth["rules_sha256"][:12],
-                              hashlib.sha256(src).hexdigest()[:12]))
+    # J-21 发布出去的数据集与快照同源。
+    # 锁本身在 load() 就前置校验（对不上直接 BLOCKED，构建不往下走），
+    # 所以这里查链条的第二段：要发出去的那份 rules@ver.json，是不是快照那一份。
+    import hashlib as _h
+    payload = None
+    for n, _d, b in (ds_files or []):
+        if n.startswith("rules@"):
+            payload = b
+    lock = truth.get("rules_sha256") or ""
+    got = _h.sha256(payload).hexdigest() if payload else ""
+    add("J-21", bool(payload) and got == lock,
+        "锁 %s… ｜ 待发布 %s…" % (lock[:12], (got[:12] or "缺")))
 
     # J-22 无占位页
     stubs = [p["path"] for p in pages if "callout stub" in p["html"]]

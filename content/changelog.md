@@ -50,8 +50,10 @@ audience: human
 数据集文件名带版本号，旧版本永久保留、不覆盖：
 
 ```
-/datasets/rules-{{product_version}}.json
-/datasets/facts-{{product_version}}.json
+/datasets/rules@{{product_version}}.json
+/datasets/hosts@{{product_version}}.json
+/datasets/facts.json
+/datasets/verdicts.json
 ```
 
 产品本身的变更记录在代码仓 `sotaex/agentstate` 的提交历史里——那里是事实的真源，本站是它的可读呈现。

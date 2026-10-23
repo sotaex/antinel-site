@@ -282,3 +282,19 @@ footer.site {
   * { transition: none !important; animation: none !important; }
   .card:hover { transform: none; }
 }
+
+/* ---------- 首页：三条命令 + 六档预览 ---------- */
+.quick { margin: 44px 0 0; }
+.quick .code-wrap { margin: 12px 0 10px; }
+.vlist { list-style: none; padding: 0; margin: 14px 0 0; }
+.vlist li {
+  display: grid; grid-template-columns: 1.6em 5.2em 1fr; gap: 6px 8px;
+  align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line);
+  font-size: .95rem;
+}
+.vlist li:last-child { border-bottom: 0; }
+.vlist .vshort { grid-column: 3; color: var(--ink-3); font-size: .88rem; }
+@media (max-width: 560px) {
+  .vlist li { grid-template-columns: 1.5em 1fr; }
+  .vlist .vshort { grid-column: 2; }
+}

@@ -16,3 +16,9 @@ desktop.ini
 _preflight/
 site-spec/
 *.bat
+
+# 本地日志（不删，只是不进仓）
+_*.log
+
+# 负控工作副本（跑完就过时，不进仓）
+tests/negctl/_work/
