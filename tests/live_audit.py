@@ -102,6 +102,23 @@ def main():
                 if st2 != 200:
                     llms_bad.append("%s(%s)" % (u.replace(SITE, ""), st2))
 
+    # L-08：站上说「装这个版本」时，PyPI 上真的能装到这个版本吗
+    pypi_ver, site_ver = None, None
+    st, b, _ = get(SITE + "/datasets/facts.json")
+    if st == 200:
+        try:
+            import json as _j
+            site_ver = _j.loads(b.decode("utf-8"))["product_version"]
+        except Exception:
+            site_ver = None
+    st2, b2, _ = get("https://pypi.org/pypi/antinel/json")
+    if st2 == 200:
+        try:
+            import json as _j
+            pypi_ver = _j.loads(b2.decode("utf-8"))["info"]["version"]
+        except Exception:
+            pypi_ver = None
+
     st, b, _ = get(SITE + "/no-such-page-xyz/")
     nf = b.decode("utf-8", "replace")
 
@@ -111,11 +128,16 @@ def main():
     print("L-04 .md 镜像可达 ｜ 坏 %d %s" % (len(bad_md), bad_md[:3]))
     print("L-05 llms.txt 链接可达 ｜ 坏 %d %s" % (len(llms_bad), llms_bad[:3]))
     print("L-06 404 页 ｜ 状态 %s ｜ 有回首页链接 %s" % (st, "回首页" in nf or "首页" in nf))
+    ver_ok = (site_ver is None or pypi_ver is None or site_ver == pypi_ver)
+    print("L-08 站上版本 vs PyPI ｜ 站 %s ｜ PyPI %s ｜ %s"
+          % (site_ver or "取不到", pypi_ver or "取不到",
+             "一致" if ver_ok and site_ver else ("无法比对（BLOCKED，不记失败）"
+                                                 if not site_ver or not pypi_ver else "不一致")))
     print("L-07 体积 ｜ 首页 %.1f KB ｜ 全部页面合计 %.0f KB"
           % (len(rows[0][2]) / 1024.0, total / 1024.0))
 
     ok = (not bad_status and not bad_head and not bad_h1 and not bad_md
-          and not llms_bad and st == 404 and not fails)
+          and not llms_bad and st == 404 and not fails and ver_ok)
     print("\n线上审核：%s" % ("全绿" if ok else "有问题，见上"))
     return 0 if ok else 1
 
