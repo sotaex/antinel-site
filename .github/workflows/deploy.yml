@@ -82,17 +82,5 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: 线上回访（发布后自检）
-        run: |
-          set -e
-          base="${{ steps.deployment.outputs.page_url }}"
-          echo "站点：$base"
-          for p in "" "facts/" "rules/" "docs/install/" "llms.txt" "robots.txt" "sitemap.xml"; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "${base}${p}")
-            echo "  ${code}  ${p:-（首页）}"
-            test "$code" = "200"
-          done
-          # 404 页必须存在（GitHub Pages 会用它）
-          code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "${base}no-such-page-xyz/")
-          echo "  404 探测：$code（应为 404）"
-          test "$code" = "404"
+      - name: 线上审核（拿发布结果当对象，逐页量）
+        run: python tests/live_audit.py "${{ steps.deployment.outputs.page_url }}"

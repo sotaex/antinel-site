@@ -805,12 +805,15 @@ def write_all(pages, machine, truth, outdir):
             '<p class="note">找不到东西时，也可以直接看 <a href="%s/facts/">事实总览</a>'
             '或 <a href="%s/llms.txt">llms.txt</a>。</p>'
             % (C.BASE_PATH, C.BASE_PATH, C.BASE_PATH, C.BASE_PATH))
+    h404_html = (R.html_404(h404, ver) if hasattr(R, "html_404") else
+                 R.page(path="/404.html", title="页面不存在 · Antinel 监理",
+                        description="这个地址没有页面。", content=h404,
+                        updated=truth["captured_at"][:10], version=ver,
+                        jsonld_obj=R.ld_webpage("/404.html", "页面不存在", "404")))
+    # 404 页没有对应的 .md 镜像，指向它的 alternate 是死链，去掉
+    h404_html = re.sub(r'<link rel="alternate"[^>]*>\n?', "", h404_html)
     with open(os.path.join(outdir, "404.html"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(R.html_404(h404, ver) if hasattr(R, "html_404") else
-                R.page(path="/404.html", title="页面不存在 · Antinel 监理",
-                       description="这个地址没有页面。", content=h404,
-                       updated=truth["captured_at"][:10], version=ver,
-                       jsonld_obj=R.ld_webpage("/404.html", "页面不存在", "404")))
+        f.write(h404_html)
     with open(os.path.join(outdir, ".nojekyll"), "w", encoding="utf-8") as f:
         f.write("")
     # CNAME 只在真的绑了自定义域时才写。空 CNAME 会让 Pages 拿它当域名去申请证书。
