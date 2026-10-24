@@ -1,9 +1,9 @@
 {
   "schema": "antinel-site-negctl/1",
-  "ran": 28,
-  "total": 28,
-  "pass": 28,
-  "baseline_criteria": 29,
+  "ran": 30,
+  "total": 30,
+  "pass": 30,
+  "baseline_criteria": 30,
   "note": "每条三步：基线全绿 → 注入后目标判据变红 → 还原后全绿",
   "details": [
     {
@@ -24,7 +24,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "H1=1 组=0 链接=63 死链=0 字节=8169"
+      "detail": "H1=1 组=0 链接=26 死链=0 字节=4494（部署后 4832）"
     },
     {
       "id": "N-03",
@@ -34,7 +34,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "页 64，异常 64：/(缺link)、/facts/(缺link)、/rules/(缺link)"
+      "detail": "页 128，异常 128：/(缺link)、/facts/(缺link)、/rules/(缺link)"
     },
     {
       "id": "N-04",
@@ -74,7 +74,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "sitemap 65 条，页 64 条，差 1"
+      "detail": "sitemap 129 条，页 128 条，差 1"
     },
     {
       "id": "N-08",
@@ -84,7 +84,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 64：/(front-matter 缺字段)、/facts/(front-matter 缺字段)、/rules/(front-matter 缺字段)"
+      "detail": "异常 128：/(front-matter 缺字段)、/facts/(front-matter 缺字段)、/rules/(front-matter 缺字段)"
     },
     {
       "id": "N-09",
@@ -94,7 +94,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 61：/facts/(@type=Thing)、/rules/(@type=Thing)、/rules/sec-01/(@type=Thing)"
+      "detail": "异常 122：/facts/(@type=Thing)、/rules/(@type=Thing)、/rules/sec-01/(@type=Thing)"
     },
     {
       "id": "N-10",
@@ -104,7 +104,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "规则页 37／真源 37，缺 0，要素缺 37"
+      "detail": "规则页 中 37／英 37／真源 37，缺 0，要素缺 74"
     },
     {
       "id": "N-11",
@@ -114,7 +114,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 64：/ 缺 sha256:b71e5、/facts/ 缺 sha256:b71e5、/rules/ 缺 sha256:b71e5"
+      "detail": "异常 128：/ 缺 sha256:b71e5、/facts/ 缺 sha256:b71e5、/rules/ 缺 sha256:b71e5"
     },
     {
       "id": "N-12",
@@ -134,7 +134,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "死链 1：/compare/ → /no-such-page/"
+      "detail": "死链 1｜漏前缀 0"
     },
     {
       "id": "N-14",
@@ -144,7 +144,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "110 KB｜段 63／页 64｜头部说明 6 行"
+      "detail": "241 KB｜段 127／页 128｜头部说明 6 行"
     },
     {
       "id": "N-15",
@@ -285,6 +285,26 @@
       "red_ok": true,
       "restore_ok": true,
       "detail": "跨页重复长句 1：/compare/＝/license/"
+    },
+    {
+      "id": "N-29",
+      "criterion": "J-16",
+      "desc": "英文镜像少一页（中文页没有对应）",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "镜像 中 64／英 63｜缺对应 中 1 英 0｜lang 错 0｜数字跨语言冲突 0"
+    },
+    {
+      "id": "N-30",
+      "criterion": "J-16",
+      "desc": "英文镜像写错规则数（跨语言不一致）",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "镜像 中 64／英 64｜缺对应 中 0 英 0｜lang 错 0｜数字跨语言冲突 1"
     }
   ]
 }

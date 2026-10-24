@@ -170,8 +170,14 @@ def n09():
 
 
 def n10():
-    """规则页少一个要素（类别改叫分类）。"""
-    patch("gen.py", "<dt>类别</dt>", "<dt>分类</dt>")
+    """规则页少一个要素（类别改叫分类），中英两边各改一处。
+
+    锚点跟着代码走：标签早已收进 page_rule 的 L 字典，不再是裸 <dt>类别</dt>。
+    J-11 按语言取词表后，只改中文只能证明中文那条分支会红——英文分支
+    （37 页）也得有人证明它看得见，否则那半边是没负控的判据。
+    """
+    patch("gen.py", '"cat": "类别"', '"cat": "分类"')
+    patch("gen.py", '"cat": "Category"', '"cat": "Class"')
 
 
 def n11():
@@ -285,6 +291,31 @@ def n28():
     append("content/license.md", line)
 
 
+def n29():
+    """英文镜像少一页：把 /en/verdicts/ 的注册摘掉，中文那页就没有对应了。
+
+    这是 J-16 的第一条（一一对应）。摘法必须是真的「不生成那一页」——
+    把标题改掉不算，那样页还在，只是名字变了，判据不该红。
+    """
+    patch("gen.py",
+          '    h, m = page_verdicts_en(truth)\n'
+          '    add("/en/verdicts/", "The six verdicts · Antinel Steward",',
+          '    h, m = page_verdicts_en(truth)\n'
+          '    if False:\n'
+          '        add("/en/verdicts/", "The six verdicts · Antinel Steward",')
+
+
+def n30():
+    """英文镜像写错一个数字：37 条规则写成 36 条。
+
+    这是 J-16 的第三条（数字跨语言一致）。中文那边是对的，只有英文错——
+    两边各自「看起来都对」，只有跨语言比一遍才发现。
+    """
+    append("content/en/faq.md",
+           "\nAntinel Steward ships with 36 shield rules in total, all of them "
+           "documented on this site.\n")
+
+
 CONTROLS = [
     ("N-01", "J-02", "robots 少一条爬虫令牌", n01),
     ("N-02", "J-03", "llms.txt 少一个分组", n02),
@@ -295,7 +326,7 @@ CONTROLS = [
     ("N-07", "J-08", "sitemap 多一条幽灵地址", n07),
     ("N-08", "J-09", "md 镜像缺 front-matter 字段", n08),
     ("N-09", "J-10", "JSON-LD 用了未登记类型", n09),
-    ("N-10", "J-11", "真源少一条规则", n10),
+    ("N-10", "J-11", "规则页少一个要素（类别改名），中英两边各注入一处", n10),
     ("N-11", "J-12", "引用块缺指纹", n11),
     ("N-12", "J-13", "规则镜像改一字节（应在装载时就 BLOCKED）", n12, "blocked"),
     ("N-13", "J-14a", "正文指向不存在页面", n13),
@@ -314,6 +345,8 @@ CONTROLS = [
     ("N-26", "J-28", "人读页正文出现营销词", n26),
     ("N-27", "J-29", "正文塞一个跳级标题", n27),
     ("N-28", "J-30", "同一句长话抄到两页上", n28),
+    ("N-29", "J-16", "英文镜像少一页（中文页没有对应）", n29),
+    ("N-30", "J-16", "英文镜像写错规则数（跨语言不一致）", n30),
 ]
 
 
