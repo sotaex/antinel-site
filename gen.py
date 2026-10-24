@@ -908,9 +908,9 @@ def build(truth, facts):
 
     # 六档
     h, m = page_verdicts(truth)
-    add("/verdicts/", "六档裁决 · Antinel 监理",
-        "PACK/SENT/SYNC/CLEAN/BLIND/NA 六档证据语义；CLEAN 不等于清白，BLIND 单列。",
-        h, m, R.ld_article("六档裁决", "/verdicts/", data_date, "证据裁决语义"))
+    add("/verdicts/", "六种结论 · Antinel 监理",
+        "查完给每个工具一个结论，共六种。有记录就说有，没查到就说没查到，两件事不合并。",
+        h, m, R.ld_article("六种结论", "/verdicts/", data_date, "检查结论的六种含义"))
 
     # 手写页
     for slug, title, desc in HAND:
