@@ -86,9 +86,14 @@ jobs:
         id: audit
         timeout-minutes: 15
         shell: bash
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
           set -o pipefail
-          python tests/live_audit.py "${{ steps.deployment.outputs.page_url }}" 2>&1 | tee audit.log
+          # page_url 有可能为空（deploy-pages 的输出在个别情况下不填）。
+          # 空着传下去，脚本会把空字符串当站点地址，连不上就报「sitemap 取不到」，
+          # 看起来像站点坏了，其实是参数没传。这里兜一个默认值。
+          python tests/live_audit.py "${PAGE_URL:-https://sotaex.github.io/antinel-site}" 2>&1 | tee audit.log
 
       - name: 存审核日志（失败也要拿到，否则只看到「红」看不到「为什么红」）
         if: always()

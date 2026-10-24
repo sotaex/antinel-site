@@ -25,7 +25,8 @@ import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
-SITE = (sys.argv[1] if len(sys.argv) > 1 else "https://sotaex.github.io/antinel-site").rstrip("/")
+_arg = (sys.argv[1] if len(sys.argv) > 1 else "").strip()
+SITE = (_arg or "https://sotaex.github.io/antinel-site").rstrip("/")
 CTX = ssl.create_default_context()
 CTX.check_hostname = False
 CTX.verify_mode = ssl.CERT_NONE
@@ -91,7 +92,9 @@ def main():
 
     st, body, _ = get(SITE + "/sitemap.xml")
     if st != 200:
-        print("sitemap 取不到：%s" % st)
+        print("sitemap 取不到：status=%s ｜ 站点 %r" % (st, SITE))
+        print("（站点地址为空或连不上。地址来自命令行第一个参数，"
+              "CI 里是 deploy-pages 的 page_url。）")
         return 2
     urls = re.findall(r"<loc>(.*?)</loc>", body.decode("utf-8", "replace"))
     print("站点 %s\nsitemap %d 条\n" % (SITE, len(urls)))
