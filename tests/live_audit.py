@@ -20,6 +20,7 @@
 import re
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -37,7 +38,6 @@ def get(url, timeout=30, retries=3):
     返回 (status, body, final_url)。status=0 表示三次都没连上，
     调用方要把它记成「受阻」，不能记成「失败」（受阻≠失败）。
     """
-    import time
     last = ""
     for i in range(retries):
         req = urllib.request.Request(url, headers={"User-Agent": UA})
@@ -61,7 +61,6 @@ def wait_live(expect_pages=None, tries=10, gap=15):
 
     等不到也不改判据，照实审、照实报。
     """
-    import time
     for i in range(tries):
         st, body, _ = get(SITE + "/sitemap.xml", timeout=15)
         if st == 200:
@@ -103,6 +102,18 @@ def main():
 
     with ThreadPoolExecutor(max_workers=6) as ex:
         rows = list(ex.map(one, urls))
+
+    # CDN 是分批生效的：sitemap 已经是新版，个别页面还指着旧缓存。
+    # 对非 200 的项隔 30 秒再取一次，最多三轮。等不到就照实报坏。
+    # 这不是放宽判据——判据的对象是「发布后的站点」，不是「发布后第 0 秒的站点」。
+    for round_ in range(3):
+        retry = [u for u, st, _b, _f in rows if st != 200]
+        if not retry:
+            break
+        print("L-01 第 %d 轮补取：%d 个地址非 200，等 30 秒再看" % (round_ + 1, len(retry)))
+        time.sleep(30)
+        fixed = {u: one(u) for u in retry}
+        rows = [fixed.get(u) or (u, st, b, f) for u, st, b, f in rows]
 
     total = 0
     bad_status, blocked, bad_head, bad_h1, bad_md = [], [], [], [], []

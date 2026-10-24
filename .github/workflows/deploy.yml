@@ -83,5 +83,17 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: 线上审核（拿发布结果当对象，逐页量）
-        timeout-minutes: 12
-        run: python tests/live_audit.py "${{ steps.deployment.outputs.page_url }}"
+        id: audit
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          set -o pipefail
+          python tests/live_audit.py "${{ steps.deployment.outputs.page_url }}" 2>&1 | tee audit.log
+
+      - name: 存审核日志（失败也要拿到，否则只看到「红」看不到「为什么红」）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-audit-log
+          path: audit.log
+          retention-days: 7
