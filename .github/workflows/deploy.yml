@@ -79,6 +79,11 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # deploy job 是独立的一台机器，没有 checkout 就没有仓库文件，
+      # 下面那句 python tests/live_audit.py 会直接报「文件不存在」——
+      # 报出来像「站点坏了」，其实是脚本根本没跑（2026-10-24 踩过：整个 job 9 秒就红）。
+      - uses: actions/checkout@v4
+
       - id: deployment
         uses: actions/deploy-pages@v4
 
