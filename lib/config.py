@@ -11,7 +11,11 @@ def _env(key, default):
 
 
 SITE_URL = _env("SITE_URL", "https://sotaex.github.io").rstrip("/")
-BASE_PATH = _env("BASE_PATH", "/antinel-site").rstrip("/")
+# BASE_PATH 默认空：本地 python gen.py 出来的站，双击 index.html 就能看。
+# 部署到 GitHub 项目页时由 CI 显式传 BASE_PATH=/antinel-site。
+# 反过来（默认带子路径）会让本地预览的 CSS/JS 全部 404，而且不报错——
+# 页面看起来「能用」，只是没样式。2026-10-24 踩过这个坑。
+BASE_PATH = _env("BASE_PATH", "").rstrip("/")
 if BASE_PATH == "/":
     BASE_PATH = ""
 

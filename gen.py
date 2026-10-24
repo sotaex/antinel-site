@@ -21,6 +21,7 @@ from lib import md as MD             # noqa: E402
 from lib import render as R          # noqa: E402
 from lib import sources as S         # noqa: E402
 from lib import checks as K          # noqa: E402
+from lib import human as H           # noqa: E402
 
 CAT_ZH = {
     "secrets": "机密与隐私",
@@ -30,19 +31,19 @@ CAT_ZH = {
     "context": "环境信息探测",
     "metadata": "技能元数据",
     "supply_chain": "供应链与插件",
-    "canary": "金丝雀布防",
+    "canary": "诱饵文件布防",
 }
 
 SEV_ZH = {"critical": "严重（当场拦截）", "warning": "警告（提醒放行）"}
 
 HAND = [
-    ("steward", "为什么叫监理", "监理＝按口径把关、留痕、叫停的独立第三方（GB/T 19668 谱系）。"),
-    ("gates", "四道闸门", "内容安全／敏感面／元数据与出联／行为，四道门各挡什么。"),
-    ("monitor", "数据外传监控六机制", "自认审计／出口账本／宿主门闸／金丝雀／安全区／报告呈现。"),
+    ("steward", "为什么叫监理", "监理＝按事先写好的标准把关、记录、必要时叫停的独立第三方（GB/T 19668 谱系）。"),
+    ("gates", "四道门", "内容安全／敏感面／元数据与出联／行为，四道门各挡什么、挡不住什么。"),
+    ("monitor", "数据外传监控六机制", "自认记录／出口记录／宿主拦截／诱饵文件／安全区／报告呈现，六种机制各管一段。"),
     ("checkup", "安全体检", "只读、本地、四组输出；一次点开就知道这台机器有没有被带走东西。"),
     ("threat-model", "威胁模型与边界", "护栏不是隔离层：我们拦什么、不拦什么、为什么。"),
-    ("completeness", "40 格完备矩阵", "8 类失效载体 × 看／判／报／挡／记，完备在哪一维定义。"),
-    ("audit", "审计链与复算", "只增不删、可重算、第三方复跑取代随包判定。"),
+    ("completeness", "40 格完备矩阵", "8 类载体 × 五个动作（看／判／报／挡／记），四十个格子，哪一格还没查。"),
+    ("audit", "审计链与复算", "只加不删、改一个字节就能算出来；第三方复算可以取代随包结论。"),
     ("compare", "和谁不一样", "和杀毒、沙箱、DLP、SIEM、等保的区别，一张表说清。"),
     ("license", "许可与中立", "代码 Apache-2.0／内容 CC-BY-SA-4.0／数据 CC-BY-4.0；不收通过费、不出售排名。"),
     ("brand", "品牌与用词", "Antinel 监理／Antinel Steward／包名 antinel，以及不要用的词。"),
@@ -202,43 +203,275 @@ def page_facts(facts, truth):
 
 
 def page_verdicts(truth):
+    """六种结论。人话名从 lib/human.py 取；英文代号降为副标，给工程师对接日志用。"""
     v = truth["verdicts"]
     order = sorted(v.values(), key=lambda x: x.get("order", 99))
     rows = "".join(
-        '<tr><td><span class="vicon">%s</span> <code>%s</code></td><td>%s</td><td>%s</td></tr>'
-        % (R.esc(x.get("icon", "")), R.esc(x["key"]), R.esc(x.get("title", "")),
-           R.esc(x.get("short", ""))) for x in order)
+        '<tr><td><span class="vicon">%s</span> <strong>%s</strong><br>'
+        '<code class="sub">%s</code></td><td>%s</td><td>%s</td></tr>'
+        % (R.esc(x.get("icon", "")), R.esc(H.v(x["key"], "name")), R.esc(x["key"]),
+           R.esc(H.v(x["key"], "short")), R.esc(H.v(x["key"], "todo"))) for x in order)
     ev = truth["evidence_meaning"]
     evrows = "".join('<tr><td><code>%s</code></td><td>%s</td><td>%s</td></tr>'
                      % (R.esc(k), R.esc(val[0]), R.esc(val[1])) for k, val in ev.items())
     body = (
-        '<h1>六档裁决</h1>\n'
-        '<p class="lead">一句话：体检把每个工具的取证结果翻成六档，<strong>同件命中最高的档计</strong>；'
-        '「查过没发现」不等于清白，「没查到」是盲区，单列。</p>\n'
-        '<div class="callout"><p><strong>措辞纪律：</strong>结论一律带「自认」二字——'
-        '监理读到的是工具自己写下的字段，不是我们亲眼看见的动作。</p></div>\n'
-        '<h2 id="table">六档语义</h2>\n'
-        '<div class="table-wrap"><table><thead><tr><th>档</th><th>名字</th><th>含义</th></tr></thead>'
-        '<tbody>%s</tbody></table></div>\n'
-        '<h2 id="priority">优先级</h2>\n'
-        '<p>同件命中多档时，取优先级最高的一档：PACK &gt; SENT &gt; SYNC &gt; CLEAN。'
-        'BLIND 与 NA 不参与比较。</p>\n'
-        '<h2 id="keys">证据键名对照（%d 个）</h2>\n'
-        '<div class="table-wrap"><table><thead><tr><th>字段</th><th>归入档</th><th>人话</th></tr></thead>'
-        '<tbody>%s</tbody></table></div>\n'
-        '<h2 id="boundary">两条不能省的话</h2>\n'
-        '<ul><li>CLEAN 是「查过，没发现记录」，不是「没有外传」。</li>'
-        '<li>BLIND 是「登记了、机器上也有，但扫描器走不到」——那是监理没查，不是它清白。</li></ul>\n'
-        % (rows, len(ev), evrows))
-    md = ["# 六档裁决", "",
-          "一句话：体检把每个工具的取证结果翻成六档，同件命中最高的档计。", "",
-          "## 六档语义", "", "| 档 | 名字 | 含义 |", "|---|---|---|"]
+        '<h1>六种结论</h1>\n'
+        '<p class="lead">检查完，每个 AI 工具拿一个结论。同一个工具命中多条时，'
+        '取最重的那条。</p>\n'
+        '<div class="callout"><p>%s</p></div>\n'
+        '<h2 id="table">六种结论</h2>\n'
+        '<div class="table-wrap"><table><thead><tr><th>结论</th><th>这意味着什么</th>'
+        '<th>你该做什么</th></tr></thead><tbody>%s</tbody></table></div>\n'
+        '<h2 id="priority">多条命中时取哪一条</h2>\n'
+        '<p>按这个顺序取最重的一条：'
+        '<code>PACK</code> &gt; <code>SENT</code> &gt; <code>SYNC</code> &gt; '
+        '<code>CLEAN</code>。'
+        '<code>BLIND</code> 和 <code>NA</code> 不参加比较——它们不是「轻」，是「另一回事」。</p>\n'
+        '<h2 id="keys">工具记下的字段，分别算什么（%d 个）</h2>\n'
+        '<p>这一节给要对接日志的人。看不懂可以跳过，不影响上面的结论。</p>\n'
+        '<div class="table-wrap"><table><thead><tr><th>字段名</th><th>算哪一档</th>'
+        '<th>人话</th></tr></thead><tbody>%s</tbody></table></div>\n'
+        '<h2 id="edge">两句话不能省</h2>\n'
+        '<ul>'
+        '<li>「查过了，没找到记录」不是「没有外传」。它只说明这次扫到的地方没有证据。</li>'
+        '<li>「没查到」不是清白。那是这一项没查成，监理没看见，不是它没问题。</li>'
+        '</ul>\n'
+        % (H.VERDICT_WHY, rows, len(ev), evrows))
+    md = ["# 六种结论", "",
+          "检查完，每个 AI 工具拿一个结论。同一个工具命中多条时，取最重的那条。", "",
+          "> " + H.VERDICT_WHY, "",
+          "## 六种结论", "", "| 结论 | 代号 | 这意味着什么 | 你该做什么 |", "|---|---|---|---|"]
     for x in order:
-        md.append("| %s %s | %s | %s |" % (x.get("icon", ""), x["key"],
-                                           x.get("title", ""), x.get("short", "")))
-    md += ["", "## 证据键名对照", "", "| 字段 | 归入档 | 人话 |", "|---|---|---|"]
+        md.append("| %s %s | `%s` | %s | %s |"
+                  % (x.get("icon", ""), H.v(x["key"], "name"), x["key"],
+                     H.v(x["key"], "short"), H.v(x["key"], "todo")))
+    md += ["", "## 工具记下的字段，分别算什么", "",
+           "| 字段名 | 算哪一档 | 人话 |", "|---|---|---|"]
     for k, val in ev.items():
         md.append("| `%s` | %s | %s |" % (k, val[0], val[1]))
+    return body, "\n".join(md)
+
+
+def page_why(truth, facts):
+    """给不看技术的人：一页纸，可打印（CSS 已有 @media print）。四问四答，无术语。"""
+    f = {c["id"]: c for c in facts}
+    v = f["F-001"]["value"]
+    body = (
+        '<h1>给不看技术的人</h1>\n'
+        '<p class="lead">这一页只用大白话，四分钟读完。看完你会知道三件事：'
+        '这事跟你有没有关系、它能给你什么、你要做什么。</p>\n'
+
+        '<h2 id="q1">一、这事跟你有没有关系</h2>\n'
+        '<p>你的团队在用 AI 写代码、写文案、做表。这些工具要在你电脑上读文件、跑命令，'
+        '才能把活干完。</p>\n'
+        '<p>它们读得对不对，现在没人说得清。你的电脑上没有一本账。</p>\n'
+        '<p>于是有一种场面：客户或领导问一句「我们的资料会不会外流」，'
+        '你答不上来。不是因为你没管，是因为你手上没有记录。</p>\n'
+        '<p>这一页讲的工具，就是给你补上这本账。</p>\n'
+
+        '<h2 id="q2">二、它到底做什么</h2>\n'
+        '<p>它做三件事，都很朴素。</p>\n'
+        '<dl class="qa">'
+        '<dt>记</dt>'
+        '<dd>每次 AI 工具要读文件、删文件、连网络，它记一条。记在你自己电脑上。</dd>'
+        '<dt>拦</dt>'
+        '<dd>碰到最危险的那几类动作（比如读你的密钥文件、删你的项目），它当场拦下，不让做。</dd>'
+        '<dt>出纸</dt>'
+        '<dd>你要交差的时候，它出一页纸：这台电脑上每个工具，有没有自己记下「上传过」。</dd>'
+        '</dl>\n'
+        '<p>它不改你的文件，不改你的代码，不碰你的业务。'
+        '它只在你电脑上跑，自己不上网，结果不出这台电脑。</p>\n'
+
+        '<h2 id="q3">三、凭什么信</h2>\n'
+        '<p>不要信我们的说法。信这三件你能自己做的事。</p>\n'
+        '<ul>'
+        '<li><strong>账本改不了。</strong>每条记录带一个指纹，改一个字节就能算出来。'
+        '一条命令查：<code>antinel verify</code>。</li>'
+        '<li><strong>结论可以被推翻。</strong>你自己跑一遍，得出不同的结论，'
+        '系统认你的，不认我们的。原记录不删不改。</li>'
+        '<li><strong>标准是公开的。</strong>%s 条检查规则写在公开文件里。'
+        '觉得哪条太松或太紧，改完自己算。</li>'
+        '</ul>\n'
+        '<p>还有一条更像实话的：我们不卖「认证」，不收「通过费」，'
+        '也不接「帮我过检」的活。判断和收费分开，结论才站得住。</p>\n'
+
+        '<h2 id="q4">四、它做不到什么</h2>\n'
+        '<p>这一段放在这里，不放在页脚。</p>\n'
+        '<ul>'
+        '<li>有人把危险操作写进脚本再执行，它拦不住。会有记录，但不会阻止。</li>'
+        '<li>它不做隔离。要物理隔离，用容器或虚拟机。</li>'
+        '<li>它只认识登记过的 %s 类 AI 工具。没登记的工具，它拿不到记录。</li>'
+        '<li>它出的不是检验检测报告，没有法律效力。要那种报告，找有资质的机构。</li>'
+        '</ul>\n'
+
+        '<h2 id="q5">五、你要做什么</h2>\n'
+        '<p>两步。先查一次，再看结果。</p>\n'
+        '<ol>'
+        '<li><strong>查一次。</strong>在电脑上跑 <code>antinel ui</code>，'
+        '浏览器点一下。一到两分钟出结果。只读，不改任何东西。</li>'
+        '<li><strong>看结果。</strong>如果出现「它自己记着：发出去过」，'
+        '就值得往下查。如果全是「查过了，没找到记录」，你至少有了一个能说的答案。</li>'
+        '</ol>\n'
+        '<p class="cta"><a class="btn primary" href="%s/docs/quickstart/">两分钟查一次</a>'
+        '<a class="btn" href="%s/sample/">先看一页样例</a></p>\n'
+
+        '<h2 id="q6">六、谁不需要它</h2>\n'
+        '<p>三种人可以先不用：只用 AI 聊天、不在电脑上跑 AI 工具的人；'
+        '已经把 AI 工具关在容器里、并且有网络出口管控的人；'
+        '需要的是法律效力报告、而不是工程记录的人。</p>\n'
+        % (v["rules"], f["F-003"]["value"]["hosts"], C.BASE_PATH, C.BASE_PATH))
+
+    md = ["# 给不看技术的人", "",
+          "这一页只用大白话，四分钟读完。", "",
+          "## 一、这事跟你有没有关系", "",
+          "你的团队在用 AI 写代码、写文案、做表。这些工具要在你电脑上读文件、跑命令，才能把活干完。",
+          "", "它们读得对不对，现在没人说得清。你的电脑上没有一本账。", "",
+          "客户或领导问一句「我们的资料会不会外流」，你答不上来。"
+          "不是因为你没管，是因为你手上没有记录。", "",
+          "## 二、它到底做什么", "",
+          "- **记**：每次读文件、删文件、连网络，记一条，记在你自己电脑上。",
+          "- **拦**：最危险的那几类动作当场拦下，不让做。",
+          "- **出纸**：要交差的时候，出一页纸。", "",
+          "## 三、凭什么信", "",
+          "- 账本改不了：每条记录带指纹，`antinel verify` 一条命令查。",
+          "- 结论可以被推翻：你自己跑一遍，系统认你的结论。",
+          "- 标准公开：%d 条规则写在公开文件里。" % v["rules"], "",
+          "## 四、它做不到什么", "",
+          "- 写进脚本再执行，拦不住（有记录）。",
+          "- 不做隔离，要隔离用容器。",
+          "- 只认识登记过的 %d 类 AI 工具。" % f["F-003"]["value"]["hosts"],
+          "- 不是检验检测报告，没有法律效力。", "",
+          "## 五、你要做什么", "",
+          "1. 跑 `antinel ui`，浏览器点一下，一到两分钟。",
+          "2. 看结果。出现「发出去过」就往下查；全是「没找到记录」，你也有了能说的答案。", "",
+          "## 六、谁不需要它", "",
+          "只用 AI 聊天、不在电脑上跑工具的人；已经把工具关在容器里并有出口管控的人；"
+          "需要法律效力报告的人。", ""]
+    return body, "\n".join(md)
+
+
+def page_sample(truth, facts):
+    """一页纸样例。必须处处标明是样例，不能让人误当成自己机器的结果。"""
+    f = {c["id"]: c for c in facts}
+    banner = ('<div class="callout warn"><p><strong>样例数据。</strong>'
+              '这一页用来说明输出长什么样，不是你电脑的检查结果。'
+              '你机器上的那一页，跑一次 <code>antinel brief</code> 就有。</p></div>\n')
+    body = (
+        '<h1>一页纸长什么样</h1>\n'
+        '<p class="lead">这是你要交差的那张纸。三段：一句话结论、逐工具清单、下一步。'
+        '下面用的是样例数据。</p>\n'
+        + banner +
+        '<div class="sheet">\n'
+        '<p class="sheet-head">样例 · 非真实数据</p>\n'
+        '<h2 class="sheet-title">本机 AI 工具外传检查 · 一页纸</h2>\n'
+        '<p class="sheet-meta">机器：工作站一台 ｜ 检查时间：样例 ｜ '
+        '产品版本 %s ｜ 数据日期 %s</p>\n'
+        '<p class="sheet-verdict">一句话结论：<strong>有 1 个工具自己记着「发出去过」，'
+        '2 个只查到「在同步」，1 个查过没发现记录，2 个没查到。</strong></p>\n'
+        '<div class="table-wrap"><table><thead><tr>'
+        '<th>AI 工具</th><th>结论</th><th>它自己写下的</th><th>建议</th>'
+        '</tr></thead><tbody>'
+        '<tr><td>工具甲</td><td>🟠 它自己记着：发出去过</td>'
+        '<td>「上次上传：2026-09-30」</td><td>问工具方传了什么；先停用它</td></tr>'
+        '<tr><td>工具乙</td><td>🟡 它自己记着：在同步</td>'
+        '<td>「上次同步：2026-10-21」</td><td>看同步目录里有没有客户资料</td></tr>'
+        '<tr><td>工具丙</td><td>🟡 它自己记着：在同步</td>'
+        '<td>「上次同步：2026-10-22」</td><td>同上</td></tr>'
+        '<tr><td>工具丁</td><td>⚪ 查过了，没找到记录</td>'
+        '<td>—</td><td>换一个时间范围再查</td></tr>'
+        '<tr><td>工具戊</td><td>⚫ 没查到（这一项没查成）</td>'
+        '<td>—</td><td>手动打开它的配置目录看一眼</td></tr>'
+        '<tr><td>工具己</td><td>⚫ 没查到（这一项没查成）</td><td>—</td><td>同上</td></tr>'
+        '</tbody></table></div>\n'
+        '<p class="sheet-note">读法：「它自己记着」＝工具自己写下的记录，不是我们亲眼看见的动作。'
+        '「没查到」＝这一项没查成，不等于清白。</p>\n'
+        '<p class="sheet-next"><strong>下一步：</strong>'
+        '① 先处理「发出去过」那一个；② 对两个「没查到」补一次人工确认；'
+        '③ 把这一页存档，作为本次检查的记录。</p>\n'
+        '</div>\n'
+        '<h2 id="how">怎么得到你自己这一页</h2>\n'
+        '<p>一条命令。只读，不上传，结果留在本机。</p>\n'
+        '<div class="code-wrap"><pre><code>antinel brief</code></pre></div>\n'
+        '<p>要更细的逐条记录，用 <code>antinel host-scan</code>。'
+        '要在浏览器里点，用 <code>antinel ui</code>。</p>\n'
+        '<h2 id="edge">这一页不能当什么用</h2>\n'
+        '<p>它是工程记录，不是检验检测报告，没有法律效力。'
+        '它证明的是「这台电脑上有哪些记录」，不证明「你的资料一定没出去」。</p>\n'
+        '<p class="cta"><a class="btn primary" href="%s/docs/quickstart/">'
+        '两分钟查一次</a></p>\n'
+        % (truth["product_version"], truth["captured_at"][:10], C.BASE_PATH))
+
+    md = ["# 一页纸长什么样", "",
+          "> 样例数据。这一页用来说明输出长什么样，不是你电脑的检查结果。", "",
+          "## 样例：本机 AI 工具外传检查 · 一页纸", "",
+          "一句话结论：有 1 个工具自己记着「发出去过」，2 个只查到「在同步」，1 个查过没发现记录，2 个没查到。", "",
+          "| AI 工具 | 结论 | 它自己写下的 | 建议 |",
+          "|---|---|---|---|",
+          "| 工具甲 | 🟠 它自己记着：发出去过 | 「上次上传：2026-09-30」 | 问工具方传了什么；先停用它 |",
+          "| 工具乙 | 🟡 它自己记着：在同步 | 「上次同步：2026-10-21」 | 看同步目录里有没有客户资料 |",
+          "| 工具丙 | 🟡 它自己记着：在同步 | 「上次同步：2026-10-22」 | 同上 |",
+          "| 工具丁 | ⚪ 查过了，没找到记录 | — | 换一个时间范围再查 |",
+          "| 工具戊 | ⚫ 没查到（这一项没查成） | — | 手动打开它的配置目录看一眼 |",
+          "| 工具己 | ⚫ 没查到（这一项没查成） | — | 同上 |", "",
+          "## 怎么得到你自己这一页", "",
+          "```", "antinel brief", "```", "",
+          "## 这一页不能当什么用", "",
+          "它是工程记录，不是检验检测报告，没有法律效力。", ""]
+    return body, "\n".join(md)
+
+
+def page_docs_index(truth, facts):
+    """文档目录。按「你现在的处境」分三条路，不按文件字母序。"""
+    starts = [
+        ("第一次装，只想让它跑起来", "install",
+         "三条命令。装完就有一条记录在写。"),
+        ("装好了，想知道它到底拦什么", "quickstart",
+         "装 → 查 → 守，五分钟走一遍。"),
+        ("要交给别人评审，需要字段和退出码", "agent",
+         "字段表、退出码、钩子契约。这页读者是程序，人也能看。"),
+    ]
+    rest = [d for d in DOCS if d[0] not in ("install", "quickstart", "agent")]
+
+    def card(slug, title, desc, label=None):
+        tag = '<span class="sub">%s</span>' % R.esc(label) if label else ""
+        return ('<a class="card" href="%s/docs/%s/"><h2>%s%s</h2><p>%s</p></a>'
+                % (C.BASE_PATH, slug, R.esc(title), tag, R.esc(desc)))
+
+    body = (
+        '<h1>文档</h1>\n'
+        '<p class="lead">七页。不用全看。先按你现在的处境挑一条路，'
+        '剩下的当字典查。</p>\n'
+        '<h2 id="start">先看哪一页</h2>\n'
+        '<div class="cards">\n'
+        + "".join(card(s, t, d) for t, s, d in starts) +
+        '</div>\n'
+        '<h2 id="all">其余四页</h2>\n'
+        '<div class="cards">\n'
+        + "".join(card(s, t, d) for s, t, d in rest) +
+        '</div>\n'
+        '<h2 id="machine">给程序和 Agent 看的</h2>\n'
+        '<p>整站的机读入口在 <a href="%s/llms.txt"><code>/llms.txt</code></a>：'
+        '一段摘要、八个分组、每条链接都指向纯文本。'
+        '要一次拿全，用 <a href="%s/llms-full.txt"><code>/llms-full.txt</code></a>。'
+        '要结构化数据，用 <a href="%s/datasets/">数据集</a>（JSON，带 sha256）。</p>\n'
+        '<p>每一页都有一个 <code>.md</code> 镜像，把地址末尾的 <code>/</code> '
+        '换成 <code>.md</code> 就是纯文本原文。</p>\n'
+        '<p class="cta"><a class="btn primary" href="%s/docs/install/">从安装开始</a>'
+        '<a class="btn" href="%s/docs/commands/">查命令总表</a></p>\n'
+        % (C.BASE_PATH, C.BASE_PATH, C.BASE_PATH, C.BASE_PATH, C.BASE_PATH)
+    )
+
+    md = ["# 文档", "",
+          "七页。不用全看。先按你现在的处境挑一条路，剩下的当字典查。", "",
+          "## 先看哪一页", ""]
+    for t, s, d in starts:
+        md += ["- **[%s](/docs/%s/)**：%s" % (t, s, d)]
+    md += ["", "## 其余四页", ""]
+    for s, t, d in DOCS:
+        md += ["- **[%s](/docs/%s/)**：%s" % (t, s, d)]
+    md += ["", "## 给程序和 Agent 看的", "",
+           "机读入口 `/llms.txt`；全量 `/llms-full.txt`；结构化数据 `/datasets/`。",
+           "每页有 `.md` 镜像：地址末尾 `/` 换成 `.md`。", ""]
     return body, "\n".join(md)
 
 
@@ -386,75 +619,140 @@ def page_rules_index(truth):
 
 
 def page_index(truth, facts):
+    """首页。读者是「决定装不装的人」，不是工程师。
+
+    行文照 ASD-STE100：一句一件事，动词开头，不用形容词。
+    六档文案从 lib/human.py 取，不在这里重写一遍。
+    """
     f = {c["id"]: c for c in facts}
     v = f["F-001"]["value"]
+    verds = sorted(truth["verdicts"].values(), key=lambda y: y.get("order", 99))
+    vlist = "".join(
+        '<li><span class="vicon">%s</span><strong>%s</strong>'
+        '<span class="vshort">%s</span></li>'
+        % (R.esc(x.get("icon", "")), R.esc(H.v(x["key"], "name")),
+           R.esc(H.v(x["key"], "short")))
+        for x in verds if x["key"] != "NA")
+
     body = (
         '<section class="hero">\n'
-        '<h1>AI 工具在你电脑上干了什么，<br>它一条一条记下来。</h1>\n'
-        '<p class="lead">Antinel 监理是 AI 工具运行现场的独立第三方监理：'
-        '本地运行、运行时不联网、纯标准库。能当场拦的当场拦下，拦不住的也一定记账。</p>\n'
-        '<p class="cta"><a class="btn primary" href="%s/docs/install/">装它（三步）</a>'
-        '<a class="btn" href="%s/facts/">看证据</a></p>\n'
-        '<p class="hero-meta">产品版本 %s ｜ 命令 <code>pip install antinel</code></p>\n'
+        '<h1>客户问你「我们的资料会不会外流」，<br>你现在拿得出什么？</h1>\n'
+        '<p class="lead">装上 Antinel 监理，一到两分钟出一页纸：这台电脑上每个 AI 工具，'
+        '有没有自己记下「上传过」。本地跑，不联网，结果不出这台电脑。</p>\n'
+        '<p class="cta"><a class="btn primary" href="%s/docs/quickstart/">两分钟查一次</a>'
+        '<a class="btn" href="%s/sample/">先看一页样例</a></p>\n'
+        '<p class="hero-meta">免费开源 ｜ <code>pip install antinel</code> ｜ '
+        '不改变你现在的用法</p>\n'
         '</section>\n'
-        '<section class="cards">\n'
-        '  <a class="card" href="%s/steward/"><h2>是什么</h2>'
-        '<p>监理不是哨兵，也不是杀毒。按口径把关、留痕、叫停——出事前拦，出事后能查。</p></a>\n'
-        '  <a class="card" href="%s/docs/install/"><h2>怎么装</h2>'
-        '<p>装包、装钩子、重启宿主。三步，一条命令起。</p></a>\n'
-        '  <a class="card" href="%s/facts/"><h2>凭什么信</h2>'
-        '<p>%s；%s。审计链公开，第三方可复跑。</p></a>\n'
+
+        '<section class="asks">\n'
+        '<h2>你会问三件事</h2>\n'
+        '<dl class="qa">'
+        '<dt>我的资料出去了吗</dt>'
+        '<dd>每个工具给一个结论。有记录就说有，没查到就说没查到。两件事不合并。</dd>'
+        '<dt>是谁发出去的</dt>'
+        '<dd>点名到具体工具，附上它自己写下的那条记录。</dd>'
+        '<dt>我拿什么交差</dt>'
+        '<dd>一页纸，能打印，能转发。客户或领导问起，直接给这张。</dd>'
+        '</dl>\n'
         '</section>\n'
-        '<section class="numbers">\n'
-        '<h2>一句话记住这几个数</h2>\n'
-        '<ul class="numlist">'
-        '<li><strong>%s</strong><span>条护盾规则</span></li>'
-        '<li><strong>%s</strong><span>类</span></li>'
-        '<li><strong>%s</strong><span>道审查门</span></li>'
-        '<li><strong>%s</strong><span>类 AI 工具宿主</span></li>'
-        '<li><strong>%s</strong><span>条当场拦截</span></li>'
-        '<li><strong>%s</strong><span>ms 单次钩子时延</span></li>'
-        '</ul>\n'
-        '<p class="note">这些数字全部来自 <a href="%s/facts/">事实总览</a>，'
-        '页面上不手写任何一个；机器可读版本在 <a href="%s/datasets/">数据集</a>。</p>\n'
-        '</section>\n'
+
         '<section class="quick">\n'
-        '<h2>先跑这三条</h2>\n'
+        '<h2>三步，五分钟</h2>\n'
         '<div class="code-wrap"><pre><code>pip install antinel\n'
-        'antinel install          # 装钩子，然后重启一次 AI 工具\n'
-        'antinel ui               # 浏览器里点一下，看这台机器有没有被带走东西</code></pre></div>\n'
-        '<p class="note">没有 <code>antinel</code> 命令时，把 <code>antinel</code> 换成 '
-        '<code>python -m antinel</code>。装完必须重启宿主一次，否则钩子不加载。</p>\n'
+        'antinel install     # 接上检查点，然后重启一次 AI 工具\n'
+        'antinel ui          # 浏览器点一下，看这台电脑有没有被带走东西</code></pre></div>\n'
+        '<p class="note">没有 <code>antinel</code> 命令，就把 <code>antinel</code> '
+        '换成 <code>python -m antinel</code>。装完必须重启一次 AI 工具，否则检查点不加载。</p>\n'
         '</section>\n'
+
+        '<section class="edge">\n'
+        '<h2>它拦不住什么</h2>\n'
+        '<p>这一段放在最前面，不放在页脚。</p>\n'
+        '<ul>'
+        '<li>把危险操作写进脚本再执行，它拦不住。会有记录，但不会阻止。</li>'
+        '<li>它不做隔离。要物理隔离，用容器或虚拟机。</li>'
+        '<li>它只认识登记过的 %s 类 AI 工具。没登记的工具，它没有取证路径。</li>'
+        '</ul>\n'
+        '</section>\n'
+
+        '<section class="trust">\n'
+        '<h2>你可以自己验的三件事</h2>\n'
+        '<p>不必信我们。这三件事你自己就能做。</p>\n'
+        '<dl class="qa">'
+        '<dt>查流水账有没有被动过</dt>'
+        '<dd><code>antinel verify</code>。改过一个字节，它指得出从哪一条起对不上。</dd>'
+        '<dt>自己算一遍，用你的结论</dt>'
+        '<dd>我们随包给的结论可以被你自己的结论取代。原记录不删不改。</dd>'
+        '<dt>改规则，自己定标准</dt>'
+        '<dd>%s 条规则写在公开文件里。觉得哪条太松太紧，改完自己算。</dd>'
+        '</ul>\n'
+        '</section>\n'
+
         '<section class="verdicts">\n'
-        '<h2>体检结果长这样</h2>\n'
-        '<p>每一件工具给一档。<strong>「没查到」和「没发现」必须长得不一样</strong>——'
-        '把两者合并成一句「安全」，就是在骗人。</p>\n'
+        '<h2>结论长这样</h2>\n'
+        '<p>每个工具给一个结论。<strong>「没查到」和「没发现」长得不一样</strong>——'
+        '把这两件事合并成一句「安全」，就是骗人。</p>\n'
         '<ul class="vlist">%s</ul>\n'
-        '<p class="note">六档的完整定义见 <a href="%s/verdicts/">六档裁决</a>。</p>\n'
+        '<p class="note">%s <a href="%s/verdicts/">六种结论的完整定义</a>。</p>\n'
         '</section>\n'
-        % (C.BASE_PATH, C.BASE_PATH, truth["product_version"],
-           C.BASE_PATH, C.BASE_PATH, C.BASE_PATH,
-           f["F-010"]["statement"], f["F-005"]["statement"],
-           v["rules"], v["categories"], v["gates"], f["F-003"]["value"]["hosts"],
-           f["F-002"]["value"]["critical"], f["F-004"]["value"]["p50_ms"],
-           C.BASE_PATH, C.BASE_PATH,
-           "".join('<li><span class="vicon">%s</span><code>%s</code> %s'
-                   '<span class="vshort">%s</span></li>'
-                   % (R.esc(x.get("icon", "")), R.esc(x["key"]), R.esc(x.get("title", "")),
-                      R.esc(x.get("short", "")))
-                   for x in sorted(truth["verdicts"].values(),
-                                   key=lambda y: y.get("order", 99))),
-           C.BASE_PATH))
+
+        '<section class="numbers">\n'
+        '<h2>三个数，各有各的用处</h2>\n'
+        '<ul class="numlist">'
+        '<li><strong>%s</strong><span>条检查规则</span>'
+        '<em>管四类动作：读密钥、删文件、往外传、被投毒</em></li>'
+        '<li><strong>%s</strong><span>条直接拦下</span>'
+        '<em>命中就不执行，不是事后提醒</em></li>'
+        '<li><strong>%s</strong><span>毫秒</span>'
+        '<em>你感觉不到它在跑（Windows 实测，Mac 未测）</em></li>'
+        '</ul>\n'
+        '<p class="note">数字全部来自 <a href="%s/facts/">事实清单</a>，页面上不手写。'
+        '机器可读版本在 <a href="%s/datasets/">数据集</a>。</p>\n'
+        '</section>\n'
+
+        '<section class="endcta">\n'
+        '<h2>先查一次，再决定</h2>\n'
+        '<p>检查是只读的。不改你的文件，不动工具配置，不上传任何东西。</p>\n'
+        '<p><a class="linkmore" href="%s/docs/quickstart/">两分钟查一次 →</a></p>\n'
+        '</section>\n'
+        % (C.BASE_PATH, C.BASE_PATH,
+           f["F-003"]["value"]["hosts"], v["rules"], vlist, H.VERDICT_WHY, C.BASE_PATH,
+           v["rules"], f["F-002"]["value"]["critical"], f["F-004"]["value"]["p50_ms"],
+           C.BASE_PATH, C.BASE_PATH, C.BASE_PATH))
+
     md = ["# Antinel 监理", "",
-          "一句话：AI 工具运行现场的独立第三方安全监理。本地运行、运行时不联网、纯标准库；"
-          "能当场拦的当场拦下，拦不住的也一定记账。", "",
-          "## 核心事实", ""]
-    for c in facts:
-        md.append("- **%s**：%s（证据：%s）" % (c["id"], c["statement"], c["evidence"]))
-    md += ["", "## 从哪里开始", "",
-           "- [为什么叫监理](steward/)", "- [安装](docs/install/)",
-           "- [规则目录](rules/)", "- [事实总览](facts/)"]
+          "客户问你「我们的资料会不会外流」，你现在拿得出什么？",
+          "",
+          "装上 Antinel 监理，一到两分钟出一页纸：这台电脑上每个 AI 工具，"
+          "有没有自己记下「上传过」。本地跑，不联网，结果不出这台电脑。", "",
+          "## 你会问三件事", "",
+          "- **我的资料出去了吗**：每个工具给一个结论。有记录就说有，没查到就说没查到。",
+          "- **是谁发出去的**：点名到具体工具，附上它自己写下的那条记录。",
+          "- **我拿什么交差**：一页纸，能打印，能转发。", "",
+          "## 三步，五分钟", "",
+          "```",
+          "pip install antinel",
+          "antinel install     # 接上检查点，然后重启一次 AI 工具",
+          "antinel ui          # 浏览器点一下，看这台电脑有没有被带走东西",
+          "```", "",
+          "## 它拦不住什么", "",
+          "- 把危险操作写进脚本再执行，它拦不住。会有记录，但不会阻止。",
+          "- 它不做隔离。要物理隔离，用容器或虚拟机。",
+          "- 它只认识登记过的 %d 类 AI 工具。" % f["F-003"]["value"]["hosts"], "",
+          "## 你可以自己验的三件事", "",
+          "- `antinel verify`：查流水账有没有被动过。",
+          "- 自己算一遍：你的结论可以取代我们的结论，原记录不删不改。",
+          "- 改规则：%d 条规则写在公开文件里。" % v["rules"], "",
+          "## 结论长这样", ""]
+    for x in verds:
+        if x["key"] == "NA":
+            continue
+        md.append("- **%s**：%s" % (H.v(x["key"], "name"), H.v(x["key"], "short")))
+    md += ["", "## 三个数", "",
+           "- %d 条检查规则：管四类动作——读密钥、删文件、往外传、被投毒。" % v["rules"],
+           "- %d 条直接拦下：命中就不执行。" % f["F-002"]["value"]["critical"],
+           "- %d 毫秒：你感觉不到它在跑。" % f["F-004"]["value"]["p50_ms"], ""]
     return body, "\n".join(md)
 
 
@@ -586,6 +884,20 @@ def build(truth, facts):
                          "/rules/%s/" % r["id"].lower(), data_date,
                          "%s／Gate %s" % (CAT_ZH.get(r["category"], r["category"]),
                                           "/".join(map(str, gate_of(truth, r["category"]))))))
+    # 给不看技术的人 / 一页纸样例
+    h, m = page_why(truth, facts)
+    add("/why/", "给不看技术的人 · Antinel 监理",
+        "一页纸说清：这事跟你有没有关系、它能给你什么、你要做什么。四分钟读完。",
+        h, m, R.ld_article("给不看技术的人", "/why/", data_date, "给决策者的一页纸"))
+    h, m = page_sample(truth, facts)
+    add("/sample/", "一页纸样例 · Antinel 监理",
+        "要交差的那张纸长什么样：一句话结论、逐工具清单、下一步。附脱敏样例。",
+        h, m, R.ld_article("一页纸样例", "/sample/", data_date, "检查结果一页纸样例"))
+    h, m = page_docs_index(truth, facts)
+    add("/docs/", "文档 · Antinel 监理",
+        "七页文档按「你现在的处境」分三条路：第一次装、想知道拦什么、要交人评审。",
+        h, m, R.ld_article("文档", "/docs/", data_date, "安装、命令、策略、Agent 机读卡、升级、故障"))
+
     # 数据集页（页脚与多处正文都链到这里，必须有）
     ds_files = dataset_files(truth, facts)
     h, m = page_datasets(truth, facts, [(n, d, len(b)) for n, d, b in ds_files])
@@ -613,6 +925,10 @@ def build(truth, facts):
         else:
             meta, body = got
             title = meta.get("title", title)
+            # 人读页：术语首次出现就地解释（每页一次）。技术文档页不解释——
+            # 那几页的读者本来就吃这套词，加了反而啰嗦。
+            if ("/%s/" % slug) in H.HUMAN_PAGES:
+                body = MD.explain_first(body, H.TERMS)
             h = MD.render(body, 1)
             h = re.sub(r"<h1[^>]*>", '<h1>', h, count=1) if h.startswith("<h1") else \
                 '<h1>%s</h1>\n%s' % (R.esc(title), h)
@@ -658,6 +974,7 @@ def machine_layer(pages, truth, facts):
     """llms.txt / llms-full.txt / robots.txt / sitemap.xml / security.txt"""
     ver = truth["product_version"]
     groups = [
+        ("Start", [p for p in pages if p["path"] in ("/why/", "/sample/")]),
         ("Facts", [p for p in pages if p["path"] == "/facts/"]),
         ("Rules", [p for p in pages if p["path"] == "/rules/"] +
          [p for p in pages if p["path"].startswith("/rules/") and p["path"] != "/rules/"]),
@@ -931,6 +1248,9 @@ def main():
     print("[build] %d 页 / %d 文件 / %.0f KB ｜ llms.txt %d B ｜ llms-full %d KB ｜ 占位 %d"
           % (doc["pages"], doc["files"], doc["bytes"] / 1024.0,
              doc["llms_bytes"], doc["llms_full_bytes"] // 1024, len(stubs)))
+    # 这一行是给人看的：本地空、CI 是 /antinel-site。写错会让整站没样式，且不报错。
+    print("[build] 站内前缀 BASE_PATH=%r（空＝本地根路径）｜站点 %s"
+          % (C.BASE_PATH, C.SITE_URL))
     return 0 if res["failed"] == 0 else 1
 
 

@@ -198,6 +198,48 @@ def render(text, start_level=2):
     return "\n".join(out)
 
 
+def explain_first(text, terms):
+    """给术语的首次出现补一句人话解释。每个术语每页只解释一次。
+
+    只动正文段落：标题、代码块、表格、引用块一律不碰——那里插解释会毁版式。
+    解释文本本身不许含别的术语（lib/human.py 的 TERMS 已保证），
+    所以按长度降序替换不会自我污染。
+
+    为什么放在渲染层做，而不是手改 18 个文件：手改会漏，漏了不报错。
+    """
+    if not terms:
+        return text
+    order = sorted(terms, key=len, reverse=True)
+    seen = set()
+    out = []
+    in_code = False
+    for ln in text.split("\n"):
+        st = ln.strip()
+        if st.startswith("```"):
+            in_code = not in_code
+            out.append(ln)
+            continue
+        if in_code or not st or st[0] in "#|>":
+            out.append(ln)
+            continue
+        for t in order:
+            if t in seen:
+                continue
+            i = ln.find(t)
+            # 跳过已在括号里的出现：那里插解释会变成「（…（…）…）」双重括号
+            while i >= 0 and ln.count("（", 0, i) > ln.count("）", 0, i):
+                i = ln.find(t, i + len(t))
+            if i < 0:
+                continue
+            j = i + len(t)
+            while j < len(ln) and ln[j] in "*_":   # 别把解释裹进加粗
+                j += 1
+            ln = ln[:j] + "（%s）" % terms[t] + ln[j:]
+            seen.add(t)
+        out.append(ln)
+    return "\n".join(out)
+
+
 def first_heading(text):
     for ln in text.splitlines():
         m = RE_HEAD.match(ln.strip())

@@ -13,6 +13,8 @@
   --accent-2: #0a4a50;
   --accent-soft: #e8f1f0;
   --warn: #8a5a00;
+  --warn-bg: #fff8ec;
+  --warn-line: #e8c98a;
   --radius: 10px;
   --shadow: 0 1px 2px rgba(16, 21, 28, .05), 0 8px 24px rgba(16, 21, 28, .04);
   --maxw: 760px;
@@ -31,6 +33,8 @@
     --accent-2: #8fe0d7;
     --accent-soft: #16282a;
     --warn: #e0b060;
+    --warn-bg: #241d10;
+    --warn-line: #5c4a24;
     --shadow: none;
   }
 }
@@ -49,6 +53,9 @@ body {
 }
 
 .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+
+/* 长串（路径、URL、正则）不许把版面撑破。手机上尤其容易。 */
+p, li, dd, dt, td, th, h1, h2, h3 { overflow-wrap: break-word; }
 
 .skip {
   position: absolute; left: -9999px; top: 0; padding: 12px 16px;
@@ -166,7 +173,48 @@ tr:last-child td { border-bottom: 0; }
   background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .callout p { margin: 0; }
-.callout.stub { background: #fff4e0; border-color: #e8c98a; }
+.callout p + p { margin-top: .6em; }
+.callout.stub,
+.callout.warn { background: var(--warn-bg); border-color: var(--warn-line); color: var(--ink); }
+.callout.warn strong { color: var(--warn); }
+
+/* ---------- 定义列表（人读页「一问一答」） ---------- */
+dl.qa { margin: 1.2em 0; padding: 0; }
+dl.qa dt {
+  font-weight: 600; color: var(--ink); margin-top: 1em;
+  font-size: 1.02rem;
+}
+dl.qa dt:first-child { margin-top: 0; }
+dl.qa dd { margin: .2em 0 0; color: var(--ink-2); }
+dl.qa dd + dt { margin-top: 1.1em; }
+
+/* ---------- 一页纸样例 ---------- */
+.sheet {
+  margin: 1.6em 0; padding: 26px 24px 22px;
+  background: var(--panel); border: 1px solid var(--line-2);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.sheet-head {
+  margin: 0 0 14px; padding: 4px 10px; display: inline-block;
+  font-size: .8rem; letter-spacing: .06em; font-weight: 600;
+  color: var(--warn); background: var(--warn-bg);
+  border: 1px solid var(--warn-line); border-radius: 999px;
+}
+.sheet-title { margin: 0 0 6px; font-size: 1.18rem; }
+.sheet-meta { margin: 0 0 16px; color: var(--ink-3); font-size: .88rem; }
+.sheet-verdict {
+  margin: 0 0 16px; padding: 12px 14px; border-radius: 8px;
+  background: var(--accent-soft); color: var(--ink); font-size: .97rem;
+}
+.sheet .table-wrap { margin: 0 0 14px; }
+.sheet table { font-size: .89rem; }
+.sheet th { background: transparent; border-bottom: 1px solid var(--line-2); }
+.sheet-note { margin: 0 0 12px; color: var(--ink-3); font-size: .88rem; }
+.sheet-next { margin: 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: .93rem; }
+@media (max-width: 560px) {
+  .sheet { padding: 20px 16px; }
+  .sheet table { font-size: .84rem; }
+}
 
 /* ---------- 首页 ---------- */
 .hero { padding: 26px 0 8px; }
@@ -189,9 +237,22 @@ tr:last-child td { border-bottom: 0; }
   .btn.primary:hover { color: #06211f; }
 }
 
+/* 收尾用的文字链接：不是按钮，但点击区仍要够大 */
+.linkmore {
+  display: inline-flex; align-items: center; min-height: 44px;
+  font-weight: 600; color: var(--accent); text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.linkmore:hover { border-bottom-color: var(--accent); }
+.linkmore:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
 .cards {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
   margin: 40px 0 8px;
+}
+.card .sub {
+  display: block; margin-top: 4px; font-size: .84rem;
+  font-weight: 500; color: var(--ink-3);
 }
 .card {
   display: block; padding: 20px 18px; border-radius: var(--radius);
@@ -297,4 +358,45 @@ footer.site {
 @media (max-width: 560px) {
   .vlist li { grid-template-columns: 1.5em 1fr; }
   .vlist .vshort { grid-column: 2; }
+}
+
+/* ---------- 手机：先把字号降下来 ----------
+   桌面 h1 2.5rem 在 320px 宽的屏幕上会占掉大半屏，一屏看不到正文。
+   这里统一压一档，正文保持 16px 以上（不触发 iOS 自动放大）。 */
+@media (max-width: 560px) {
+  body { font-size: 16px; line-height: 1.72; }
+  main { padding: 30px 0 56px; }
+  h1, .hero h1 { font-size: 1.62rem; line-height: 1.32; letter-spacing: 0; }
+  h2 { font-size: 1.16rem; margin: 1.9em 0 .6em; }
+  h3 { font-size: 1.02rem; }
+  .lead, .hero .lead { font-size: 1rem; line-height: 1.75; }
+  .hero { padding: 10px 0 4px; }
+  .cta { gap: 8px; margin: 20px 0 8px; }
+  .btn { width: 100%; }
+  .sheet { padding: 18px 14px; }
+  .numlist li strong { font-size: 1.45rem; }
+}
+
+/* ---------- 手机上的表格 ----------
+   窄屏硬压会把四列挤成竖排单字，读不了。两条路：
+   一页纸样例（.sheet）改成卡片，一工具一张；其余表格给最小宽度，让它横滑。 */
+@media (max-width: 560px) {
+  .table-wrap { margin: 1.1em 0; }
+  .table-wrap table { min-width: 420px; }
+
+  .sheet .table-wrap { overflow: visible; margin: 0 0 14px; }
+  .sheet table, .sheet tbody, .sheet tr, .sheet td { display: block; width: 100%; }
+  .sheet table { min-width: 0; }
+  .sheet thead { display: none; }
+  .sheet tr {
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 11px 13px; margin: 0 0 10px; background: var(--paper);
+  }
+  .sheet td { border: 0; padding: 2px 0; font-size: .92rem; line-height: 1.6; }
+  .sheet td:nth-child(1) { font-weight: 700; font-size: 1rem; }
+  .sheet td:nth-child(2) { margin-bottom: 3px; }
+  .sheet td:nth-child(3) { color: var(--ink-2); }
+  .sheet td:nth-child(3)::before { content: "它写下的："; color: var(--ink-3); }
+  .sheet td:nth-child(4) { color: var(--ink-3); font-size: .88rem; }
+  .sheet td:nth-child(4)::before { content: "建议："; }
 }

@@ -44,7 +44,7 @@ audience: human
 | 更大边界 | `antinel roots add D:\demo` | 整棵树放行 |
 | 看当前策略 | `antinel settings list` | 单键用 `settings get <键>` |
 
-放行类的命令都留痕、都可撤（`domains remove`／`paths remove`／`zone remove`）。放错了就撤，不要改判据。
+放行类的命令都有记录、都可撤（`domains remove`／`paths remove`／`zone remove`）。放错了就撤，不要改规则。
 
 ## 账本：花了多少、还够不够
 

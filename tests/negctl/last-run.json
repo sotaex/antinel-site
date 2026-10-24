@@ -1,9 +1,9 @@
 {
   "schema": "antinel-site-negctl/1",
-  "ran": 21,
-  "total": 21,
-  "pass": 21,
-  "baseline_criteria": 22,
+  "ran": 28,
+  "total": 28,
+  "pass": 28,
+  "baseline_criteria": 29,
   "note": "每条三步：基线全绿 → 注入后目标判据变红 → 还原后全绿",
   "details": [
     {
@@ -24,7 +24,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "H1=1 组=0 链接=60 死链=0 字节=7607"
+      "detail": "H1=1 组=0 链接=63 死链=0 字节=8169"
     },
     {
       "id": "N-03",
@@ -34,7 +34,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "页 61，异常 61：/(缺link)、/facts/(缺link)、/rules/(缺link)"
+      "detail": "页 64，异常 64：/(缺link)、/facts/(缺link)、/rules/(缺link)"
     },
     {
       "id": "N-04",
@@ -74,7 +74,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "sitemap 62 条，页 61 条，差 1"
+      "detail": "sitemap 65 条，页 64 条，差 1"
     },
     {
       "id": "N-08",
@@ -84,7 +84,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 61：/(front-matter 缺字段)、/facts/(front-matter 缺字段)、/rules/(front-matter 缺字段)"
+      "detail": "异常 64：/(front-matter 缺字段)、/facts/(front-matter 缺字段)、/rules/(front-matter 缺字段)"
     },
     {
       "id": "N-09",
@@ -94,7 +94,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 58：/facts/(@type=Thing)、/rules/(@type=Thing)、/rules/sec-01/(@type=Thing)"
+      "detail": "异常 61：/facts/(@type=Thing)、/rules/(@type=Thing)、/rules/sec-01/(@type=Thing)"
     },
     {
       "id": "N-10",
@@ -114,7 +114,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 61：/ 缺 sha256:b71e5、/facts/ 缺 sha256:b71e5、/rules/ 缺 sha256:b71e5"
+      "detail": "异常 64：/ 缺 sha256:b71e5、/facts/ 缺 sha256:b71e5、/rules/ 缺 sha256:b71e5"
     },
     {
       "id": "N-12",
@@ -144,7 +144,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "103 KB｜段 60／页 61｜头部说明 6 行"
+      "detail": "110 KB｜段 63／页 64｜头部说明 6 行"
     },
     {
       "id": "N-15",
@@ -215,6 +215,76 @@
       "red_ok": true,
       "restore_ok": true,
       "detail": "低于 4.5:1 的 1 项：浅色 --ink-3=1.79"
+    },
+    {
+      "id": "N-22",
+      "criterion": "J-24",
+      "desc": "人读页首段塞一个术语",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "首段含术语的页 1：/steward/（宿主）"
+    },
+    {
+      "id": "N-23",
+      "criterion": "J-25",
+      "desc": "人读页正文露出内部判据号",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "内部编号外露的页 1：/compare/（J-99）"
+    },
+    {
+      "id": "N-24",
+      "criterion": "J-26",
+      "desc": "首页出现第二个主按钮",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "主按钮超过 1 个的页 1：/（2）"
+    },
+    {
+      "id": "N-25",
+      "criterion": "J-27",
+      "desc": "边界段标题改成不表边界的话",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "缺边界段的页 1：/gates/"
+    },
+    {
+      "id": "N-26",
+      "criterion": "J-28",
+      "desc": "人读页正文出现营销词",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "禁用词 1 处：/compare/「业界第一」"
+    },
+    {
+      "id": "N-27",
+      "criterion": "J-29",
+      "desc": "正文塞一个跳级标题",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "标题跳级的页 1：/gates/（h2→h4）"
+    },
+    {
+      "id": "N-28",
+      "criterion": "J-30",
+      "desc": "同一句长话抄到两页上",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "跨页重复长句 1：/compare/＝/license/"
     }
   ]
 }

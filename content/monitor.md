@@ -27,7 +27,7 @@ audience: human
 |---|---|---|
 | 自认审计 | AI 工具有没有外传痕迹 | `antinel host-scan`／`antinel host-audit` |
 | 出口账本 | 此刻谁在往外发 | `antinel egress` |
-| 宿主门闸 | 外传落点能不能当场拦下 | `antinel host-shield` |
+| 宿主拦截 | 外传落点能不能当场拦下 | `antinel host-shield` |
 | 源码金丝雀 | 代码有没有被带出去 | `antinel canary` |
 | 安全区 | 整体收紧外传口径 | `antinel settings set net_mode block`／`antinel zone add` |
 | 报告呈现 | 结果怎么交差 | `antinel ui`／`brief`／`digest`／`inbox` |
@@ -55,7 +55,7 @@ antinel egress
 
 口径很重要：**有连接不等于有问题**。打包上传是长时间大流量的连接，正常问答是短连接。账本只给事实，判断权在你。
 
-## 三、宿主门闸
+## 三、宿主拦截
 
 ```
 antinel host-shield status
@@ -66,7 +66,7 @@ antinel host-shield decide "<路径>" allow_always
 
 对已登记的外传落点（典型是工具自己的「待上传快照」目录）施加写拒绝。默认关闭，需要你主动布防。
 
-`queue` 看等你表态的落点，`decide` 裁决放行或拒绝。**放行必须你本人在终端操作**——Agent 不能替你签字。这一条是硬约束，不是建议。
+`queue` 看等你表态的落点，`decide` 决定放行或拒绝。**放行必须你本人在终端操作**——Agent 不能替你签字。这一条是硬约束，不是建议。
 
 ## 四、源码金丝雀
 

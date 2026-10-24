@@ -10,6 +10,7 @@ import posixpath
 import re
 
 from . import config as C
+from . import human as H
 
 INVISIBLE = [(0x200B, 0x200F), (0x2028, 0x202E), (0x2060, 0x2064),
              (0xFEFF, 0xFEFF), (0xE000, 0xF8FF), (0xE0000, 0xE007F)]
@@ -384,6 +385,107 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
         low.append("读不出配色：%s" % type(e).__name__)
     add("J-23", not low, "低于 4.5:1 的 %d 项%s"
         % (len(low), ("：" + "、".join(low[:4])) if low else ""))
+
+    # ---- 人读层五条（J-24 ~ J-28）----
+    # 这一组查的是「给不搞技术的人看的那几页」写得像不像话。
+    # 人读页清单在 lib/human.py 的 HUMAN_PAGES，术语表在 TERMS，禁用词在 BANNED。
+    # 判据只读那两张表，不在这里另写一份词表——否则改一处漏一处。
+    human = [p for p in pages if p["path"] in H.HUMAN_PAGES]
+    missing_human = [x for x in H.HUMAN_PAGES if x not in {p["path"] for p in pages}]
+    if missing_human:
+        add("J-24", False, "清单里的页不存在：%s" % "、".join(missing_human))
+    else:
+        # J-24 首段无术语。首段是唯一保证被读的一段，术语出现在这里，读者立刻掉队。
+        bad = []
+        for p in human:
+            m = re.search(r'<p class="lead">(.*?)</p>', p["html"], re.S)
+            if not m:
+                continue
+            txt = _strip_tags(m.group(1))
+            hits = [t for t in H.TERMS if t in txt]
+            if hits:
+                bad.append("%s（%s）" % (p["path"], "、".join(hits)))
+        add("J-24", not bad, "首段含术语的页 %d%s"
+            % (len(bad), ("：" + "；".join(bad[:4])) if bad else ""))
+
+        # J-25 内部编号不外露。产品自己的编号（SEC-01 这类规则号）必须留，
+        # 禁的是我们自己干活用的号：J-xx 判据号、L0~L7 闸门层、B1~B5 批次、D-xx 决策号。
+        INTERNAL = re.compile(r"\b(?:J-\d{2}|L[0-7]\b|B[1-5]\b|D-\d{2}|E\d{2,})\b")
+        leaks = []
+        for p in human:
+            txt = _strip_tags(re.sub(r"<(code|pre)[^>]*>.*?</\1>", "", p["html"], flags=re.S))
+            got = sorted(set(INTERNAL.findall(txt)))
+            if got:
+                leaks.append("%s（%s）" % (p["path"], "、".join(got)))
+        add("J-25", not leaks, "内部编号外露的页 %d%s"
+            % (len(leaks), ("：" + "；".join(leaks[:4])) if leaks else ""))
+
+        # J-26 每页最多一个主按钮。两个主按钮＝读者不知道点哪个。
+        many = []
+        for p in human:
+            n = p["html"].count('class="btn primary"')
+            if n > 1:
+                many.append("%s（%d）" % (p["path"], n))
+        add("J-26", not many, "主按钮超过 1 个的页 %d%s"
+            % (len(many), ("：" + "、".join(many[:4])) if many else ""))
+
+        # J-27 边界段必有。只讲能做什么、不讲做不到什么，就不是监理。
+        noedge = []
+        for p in human:
+            hs = re.findall(r"<h2[^>]*>(.*?)</h2>", p["html"], re.S)
+            if not any(w in _strip_tags(h) for h in hs for w in H.EDGE_WORDS):
+                noedge.append(p["path"])
+        add("J-27", not noedge, "缺边界段的页 %d%s"
+            % (len(noedge), ("：" + "、".join(noedge[:5])) if noedge else ""))
+
+        # J-28 禁用词。全站查，不只人读页——营销词出现在任何一页都掉价。
+        # 两处要让路，都是为了卡住「我们自己的话」而不是卡词面：
+        #   1) 剥掉 <code>/<pre>：那里面是引述（品牌页列举我们不用哪些词）。
+        #   2) 二级词（绝对／100%）往前看一小段，有否定词就算引述或否定。
+        DENY = ("不", "非", "没", "无", "别", "禁止", "勿", "拒绝")
+        found = []
+        for p in pages:
+            txt = _strip_tags(re.sub(r"<(code|pre)[^>]*>.*?</\1>", "", p["html"], flags=re.S))
+            for w in H.BANNED:
+                if w in txt:
+                    found.append("%s「%s」" % (p["path"], w))
+            for w in H.BANNED_SOFT:
+                for m in re.finditer(re.escape(w), txt):
+                    ctx = txt[max(0, m.start() - 16):m.start()]
+                    if not any(d in ctx for d in DENY):
+                        found.append("%s「%s」" % (p["path"], w))
+                        break
+        add("J-28", not found, "禁用词 %d 处%s"
+            % (len(found), ("：" + "；".join(found[:4])) if found else ""))
+
+        # J-29 标题层级不跳级（h2 不能直接到 h4）。屏幕阅读器按层级导航，
+        # 跳级会让目录念错。纯结构问题，与文案无关。
+        jump = []
+        for p in pages:
+            hs = [int(x) for x in re.findall(r"<h([1-6])[ >]", p["html"])]
+            for a, b in zip(hs, hs[1:]):
+                if b - a > 1:
+                    jump.append("%s（h%d→h%d）" % (p["path"], a, b))
+                    break
+        add("J-29", not jump, "标题跳级的页 %d%s"
+            % (len(jump), ("：" + "、".join(jump[:4])) if jump else ""))
+
+        # J-30 人读页之间不许有长句重复。同一句话在两页出现，说明有一页在复述，
+        # 读者要读两遍。规则页的元数据表不算——那是模板产物，本来就该一样。
+        seen = {}
+        dup = []
+        for p in human:
+            m = re.search(r'<main id="main"[^>]*>(.*?)</main>', p["html"], re.S)
+            txt = _strip_tags(m.group(1) if m else p["html"])
+            for s in re.split(r"[。！？\n]", txt):
+                s = re.sub(r"\s+", "", s)
+                if len(s) < 20:
+                    continue
+                if s in seen and seen[s] != p["path"]:
+                    dup.append("%s＝%s" % (seen[s], p["path"]))
+                seen.setdefault(s, p["path"])
+        add("J-30", not dup, "跨页重复长句 %d%s"
+            % (len(dup), ("：" + "；".join(dup[:3])) if dup else ""))
 
 
     failed = [r for r in results if not r["ok"]]
