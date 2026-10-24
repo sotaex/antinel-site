@@ -36,6 +36,20 @@ CAT_ZH = {
 
 SEV_ZH = {"critical": "严重（当场拦截）", "warning": "警告（提醒放行）"}
 
+# 英文镜像用的标签。规则页的 description / remediation / name 真源自带英文，
+# 这里只补「标签」和「类别名」——不翻译正文，不引入第二份事实。
+CAT_EN = {
+    "secrets": "Secrets and privacy",
+    "destructive": "Destructive operations",
+    "network": "Outbound network",
+    "injection": "Injection and disguise",
+    "context": "Environment probing",
+    "metadata": "Skill metadata",
+    "supply_chain": "Supply chain and plugins",
+    "canary": "Canary files",
+}
+SEV_EN = {"critical": "critical (blocked on hit)", "warning": "warning (allowed, logged)"}
+
 HAND = [
     ("steward", "为什么叫监理", "监理＝按事先写好的标准把关、记录、必要时叫停的独立第三方（GB/T 19668 谱系）。"),
     ("gates", "四道门", "内容安全／敏感面／元数据与出联／行为，四道门各挡什么、挡不住什么。"),
@@ -49,6 +63,33 @@ HAND = [
     ("brand", "品牌与用词", "Antinel 监理／Antinel Steward／包名 antinel，以及不要用的词。"),
     ("faq", "常见问题", "12 个问题，每答可独立引用。"),
     ("changelog", "变更日志", "每个版本的事实变化点。"),
+]
+
+# 英文镜像的手写页清单。slug 与中文一一对应（J-16），正文在 content/en/<slug>.md。
+# 标题与描述只做 <title> 与 meta description 用；页面里的 H1 以 md 正文为准。
+HAND_EN = [
+    ("steward", "Why we call it a steward",
+     "A steward checks against written rules, records what it sees, and can stop an action."),
+    ("gates", "The four gates",
+     "Content safety, sensitive surface, metadata and outbound, behaviour — what each gate stops and what it cannot."),
+    ("monitor", "Six ways we watch outbound data",
+     "Self-reported records, the egress ledger, host gates, canary files, safe zones, and the report."),
+    ("checkup", "The checkup",
+     "Read-only, local, four groups of output. One click tells you if this machine leaked anything."),
+    ("threat-model", "Threat model and limits",
+     "A guard rail is not an isolation layer: what we stop, what we do not, and why."),
+    ("completeness", "The 40-cell matrix",
+     "8 carrier types × 5 actions. Forty cells, and which ones nobody has checked yet."),
+    ("audit", "Audit chain and re-runs",
+     "Append-only; change one byte and it shows. A third-party re-run can replace our verdict."),
+    ("compare", "How it differs",
+     "Against antivirus, sandboxes, DLP, SIEM, and compliance audits — one table."),
+    ("license", "License and neutrality",
+     "Code Apache-2.0, text CC-BY-SA-4.0, data CC-BY-4.0. No passage fee, no paid ranking."),
+    ("brand", "Brand and wording",
+     "Antinel Steward, package name antinel, and the words we do not use."),
+    ("faq", "Questions", "12 questions. Each answer stands on its own."),
+    ("changelog", "Changelog", "What changed in each version, as facts."),
 ]
 
 DOCS = [
@@ -494,27 +535,51 @@ def rule_lead(r):
     return "一句话：%s。命中时监理%s。" % (r.get("description_zh") or r.get("description", ""), act)
 
 
-def page_rule(truth, r, prev_id, next_id):
+def page_rule(truth, r, prev_id, next_id, lang="zh"):
     r = dict(r)
     for k in ("label_zh", "name", "description_zh", "description",
               "remediation_zh", "remediation", "note"):
         if isinstance(r.get(k), str):
             r[k] = vis(r[k])
+    en = (lang == "en")
     gates = gate_of(truth, r["category"])
     gate_txt = "／".join("Gate %d" % g for g in gates)
-    cat = "%s（%s）" % (CAT_ZH.get(r["category"], r["category"]), gate_txt)
+    if en:
+        cat = "%s (%s)" % (CAT_EN.get(r["category"], r["category"]), gate_txt)
+        sev = SEV_EN.get(r["severity"], r["severity"])
+        pat_labels = (("file_patterns", "File"), ("content_patterns", "Content"),
+                      ("command_patterns", "Command"), ("exclude_patterns", "Exclude"),
+                      ("whitelist_domains", "Domain allowlist"),
+                      ("whitelist_chars", "Character allowlist"), ("ranges", "Ranges"))
+        extra_labels = (("check", "Checker"), ("detection", "Detection"))
+        L = {"crumb": "Rule index", "cat": "Category", "sev": "Severity",
+             "tools": "Applies to", "ver": "Version", "src": "source of truth: rules/default.json",
+             "trigger": "When it fires", "remed": "What to do",
+             "pat": "Match shapes (regex and fields, for recomputation)",
+             "note": "Note from the stewards", "prev": "Previous", "next": "Next",
+             "all": "All %d rules", "plat": "Platform", "only": "%s only"}
+    else:
+        cat = "%s（%s）" % (CAT_ZH.get(r["category"], r["category"]), gate_txt)
+        sev = SEV_ZH.get(r["severity"], r["severity"])
+        pat_labels = (("file_patterns", "文件"), ("content_patterns", "内容"),
+                      ("command_patterns", "命令"), ("exclude_patterns", "排除"),
+                      ("whitelist_domains", "域名白名单"), ("whitelist_chars", "字符白名单"),
+                      ("ranges", "字符区间"))
+        extra_labels = (("check", "检查器"), ("detection", "检测方式"))
+        L = {"crumb": "规则目录", "cat": "类别", "sev": "级别",
+             "tools": "适用工具", "ver": "版本", "src": "真源 rules/default.json",
+             "trigger": "触发情形", "remed": "处置建议",
+             "pat": "匹配形态（正则与字段，供复算）",
+             "note": "监理说明", "prev": "上一条", "next": "下一条",
+             "all": "全部 %d 条规则", "plat": "平台", "only": "仅 %s"}
     tools = r.get("tool_names") or r.get("apply_to_tools") or []
     pats = []
-    for k, label in (("file_patterns", "文件"), ("content_patterns", "内容"),
-                     ("command_patterns", "命令"), ("exclude_patterns", "排除"),
-                     ("whitelist_domains", "域名白名单"), ("whitelist_chars", "字符白名单"),
-                     ("ranges", "字符区间")):
+    for k, label in pat_labels:
         if r.get(k):
             pats.append((label, r[k]))
-    if r.get("check"):
-        pats.append(("检查器", [r["check"]]))
-    if r.get("detection"):
-        pats.append(("检测方式", [r["detection"]]))
+    for k, label in extra_labels:
+        if r.get(k):
+            pats.append((label, [r[k]]))
 
     pat_html = ""
     if pats:
@@ -522,60 +587,92 @@ def page_rule(truth, r, prev_id, next_id):
                         % (R.esc(lbl), R.esc(vis("\n".join(
                             json.dumps(x, ensure_ascii=False) if isinstance(x, dict) else str(x)
                             for x in lst)))) for lbl, lst in pats)
-        pat_html = ('<details class="patterns"><summary>匹配形态（正则与字段，供复算）</summary>%s</details>'
-                    % inner)
+        pat_html = ('<details class="patterns"><summary>%s</summary>%s</details>'
+                    % (L["pat"], inner))
     plat = ""
     if r.get("platforms"):
-        plat = "<dt>平台</dt><dd>仅 %s</dd>" % R.esc("、".join(
-            {"nt": "Windows"}.get(p, p) for p in r["platforms"]))
+        names = "、".join({"nt": "Windows"}.get(p, p) for p in r["platforms"]) if not en \
+            else ", ".join({"nt": "Windows"}.get(p, p) for p in r["platforms"])
+        plat = "<dt>%s</dt><dd>%s</dd>" % (L["plat"], R.esc(L["only"] % names))
     note = ""
     if r.get("note"):
-        note = '<h2 id="note">监理说明</h2>\n<p>%s</p>' % R.esc(r["note"])
+        note = '<h2 id="note">%s</h2>\n<p>%s</p>' % (L["note"], R.esc(r["note"]))
 
     nav = '<p class="navline">'
     if prev_id:
-        nav += '<a href="../%s/">← 上一条 %s</a> ｜ ' % (prev_id.lower(), R.esc(prev_id))
-    nav += '<a href="../">全部 %d 条规则</a>' % len(truth["rules"])
+        nav += '<a href="../%s/">← %s %s</a> ｜ ' % (prev_id.lower(), L["prev"], R.esc(prev_id))
+    nav += '<a href="../">%s</a>' % (L["all"] % len(truth["rules"]))
     if next_id:
-        nav += ' ｜ <a href="../%s/">下一条 %s →</a>' % (next_id.lower(), R.esc(next_id))
+        nav += ' ｜ <a href="../%s/">%s %s →</a>' % (next_id.lower(), L["next"], R.esc(next_id))
     nav += "</p>"
 
+    label = r.get("label_zh") or r.get("name", "")
+    if en:
+        label = r.get("name") or r.get("label_zh", "")
+        desc = r.get("description") or r.get("description_zh", "")
+        remed = r.get("remediation") or r.get("remediation_zh", "")
+        lead = "%s. On hit, the steward %s." % (
+            desc, "blocks the action and logs it" if r["severity"] == "critical"
+            else "warns, allows it, and logs it")
+    else:
+        label = r.get("label_zh") or r.get("name", "")
+        desc = r.get("description_zh") or r.get("description", "")
+        remed = r.get("remediation_zh") or r.get("remediation", "")
+        lead = rule_lead(r)
+
     body = (
-        '<p class="crumb"><a href="../">规则目录</a> / %s</p>\n'
+        '<p class="crumb"><a href="../">%s</a> / %s</p>\n'
         '<h1>%s　%s</h1>\n'
         '<p class="lead">%s</p>\n'
         '<dl class="facts">'
-        '<dt>类别</dt><dd>%s</dd>'
-        '<dt>级别</dt><dd>%s</dd>'
-        '<dt>适用工具</dt><dd>%s</dd>'
+        '<dt>%s</dt><dd>%s</dd>'
+        '<dt>%s</dt><dd>%s</dd>'
+        '<dt>%s</dt><dd>%s</dd>'
         '%s'
-        '<dt>版本</dt><dd>%s（真源 rules/default.json）</dd>'
+        '<dt>%s</dt><dd>%s（%s）</dd>'
         '</dl>\n'
-        '<h2 id="trigger">触发情形</h2>\n<p>%s</p>\n'
-        '<h2 id="remediation">处置建议</h2>\n<p>%s</p>\n'
+        '<h2 id="trigger">%s</h2>\n<p>%s</p>\n'
+        '<h2 id="remediation">%s</h2>\n<p>%s</p>\n'
         '%s\n%s\n%s'
-        % (R.esc(r["id"]), R.esc(r["id"]), R.esc(r.get("label_zh") or r.get("name", "")),
-           R.esc(rule_lead(r)), R.esc(cat), R.esc(SEV_ZH.get(r["severity"], r["severity"])),
-           " ".join("<code>%s</code>" % R.esc(t) for t in tools) or "—",
-           plat, truth["product_version"],
-           R.esc(r.get("description_zh") or r.get("description", "")),
-           R.esc(r.get("remediation_zh") or r.get("remediation", "")),
+        % (L["crumb"], R.esc(r["id"]), R.esc(r["id"]), R.esc(label),
+           R.esc(lead), L["cat"], R.esc(cat), L["sev"], R.esc(sev),
+           L["tools"], " ".join("<code>%s</code>" % R.esc(t) for t in tools) or "—",
+           plat, L["ver"], truth["product_version"], L["src"],
+           L["trigger"], R.esc(desc),
+           L["remed"], R.esc(remed),
            pat_html, note, nav))
 
-    md = ["# %s　%s" % (r["id"], r.get("label_zh") or r.get("name", "")), "",
-          rule_lead(r), "",
-          "- 类别：%s" % cat, "- 级别：%s" % SEV_ZH.get(r["severity"], r["severity"]),
-          "- 适用工具：%s" % ("、".join(tools) or "—"),
-          "- 版本：%s" % truth["product_version"], "",
-          "## 触发情形", "", r.get("description_zh") or r.get("description", ""), "",
-          "## 处置建议", "", r.get("remediation_zh") or r.get("remediation", ""), ""]
-    if pats:
-        md += ["## 匹配形态", ""]
-        for lbl, lst in pats:
-            md.append("- %s：%s" % (lbl, vis("、".join(
-                "`%s`" % (json.dumps(x, ensure_ascii=False) if isinstance(x, dict) else x)
-                for x in lst))))
-        md.append("")
+    if en:
+        md = ["# %s %s" % (r["id"], label), "", lead, "",
+              "- %s: %s" % (L["cat"], cat), "- %s: %s" % (L["sev"], sev),
+              "- %s: %s" % (L["tools"], ", ".join(tools) or "—"),
+              "- %s: %s" % (L["ver"], truth["product_version"]), "",
+              "## %s" % L["trigger"], "", desc, "",
+              "## %s" % L["remed"], "", remed, ""]
+        if pats:
+            md += ["## %s" % L["pat"], ""]
+            for lbl, lst in pats:
+                # vis() 必须走：真源里确有隐形字符（CTX-03 的字符白名单就是 U+200D），
+                # 中文路径一直走着条，英文路径原来漏了——漏了不报错，
+                # 产物里多一个零宽字符，J-05 才红。两条路径都得过同一个函数。
+                md.append("- %s: %s" % (lbl, ", ".join(
+                    "`%s`" % vis(json.dumps(x, ensure_ascii=False) if isinstance(x, dict) else str(x))
+                    for x in lst)))
+            md.append("")
+    else:
+        md = ["# %s　%s" % (r["id"], label), "", lead, "",
+              "- %s：%s" % (L["cat"], cat), "- %s：%s" % (L["sev"], sev),
+              "- %s：%s" % (L["tools"], "、".join(tools) or "—"),
+              "- %s：%s" % (L["ver"], truth["product_version"]), "",
+              "## %s" % L["trigger"], "", desc, "",
+              "## %s" % L["remed"], "", remed, ""]
+        if pats:
+            md += ["## %s" % L["pat"], ""]
+            for lbl, lst in pats:
+                md.append("- %s：%s" % (lbl, vis("、".join(
+                    "`%s`" % (json.dumps(x, ensure_ascii=False) if isinstance(x, dict) else x)
+                    for x in lst))))
+            md.append("")
     return body, "\n".join(md)
 
 
@@ -797,8 +894,628 @@ def page_datasets(truth, facts, files):
     return body, "\n".join(md)
 
 
-# ---------------------------------------------------------------- 构建
+# ---------------------------------------------------------------- 英文镜像
+# 三条纪律，缺一条镜像就会烂：
+# 1. 英文页不是中文页的机器直译。散文按 ASD-STE100 用英文重写。
+# 2. 数字、编号、命令、字段名与中文站逐字一致（J-16 查这个）。
+#    所以数字一律从 truth / build_facts() 现取，不在这里手写第二份算式——
+#    两份算式就等于两个真相，静默不一致还不报错。
+# 3. 规则页正文取 rules/default.json 自带的 name / description / remediation。
+#    那是产品真源的英文，不是翻译件，零翻译风险。
 
+# 证据键的人话说明。键名是真源的，一句说明是英文重写的。
+# 覆盖不全就报错：真源加了字段而这里没加，页面会静默漏一行（J-16 查得到）。
+EV_EN = {
+    "lastCompressedSize": "size after the last pack",
+    "encryptedSize": "size after encryption",
+    "manifestHash": "hash of the pack manifest",
+    "lastAccepted": "last time a server accepted it",
+    "lastUploaded": "last upload",
+    "uploadedAt": "upload time",
+    "pushedAt": "push time",
+    "syncedAt": "last sync time",
+    ".reported": "marked as reported",
+    ".sent": "marked as sent",
+    ".uploaded": "marked as uploaded",
+}
+
+GATE_NAMES_EN = {1: "Content safety", 2: "Sensitive surface",
+                 3: "Metadata and outbound", 4: "Behaviour"}
+
+# F-005 的值是真源里的中文三态（是／否／无）。英文页要显示英文，
+# 但**只翻这三个 token**，别的值一个字符都不动——否则又是一份手写副本。
+_CN_TRIPLE = {"是": "yes", "否": "no", "无": "none"}
+
+
+def build_facts_en(truth):
+    """英文事实清单。数字逐字取自 build_facts() 的同一份 value，只换 statement 的语言。"""
+    zh = {c["id"]: c for c in build_facts(truth)}
+    STMT = {
+        "F-001": "%(rules)d shield rules in %(categories)d categories, "
+                 "organised by %(gates)d review gates",
+        "F-002": "%(critical)d rules block on hit, %(warning)d rules warn "
+                 "and let the action through",
+        "F-003": "%(hosts)d kinds of AI tool hosts are registered",
+        "F-004": "One hook call costs about %(p50_ms)d ms (Windows; interpreter "
+                 "start-up dominates. Linux and macOS were not measured.)",
+        "F-005": "No network at run time. Standard library only. No resident process.",
+        "F-006": "Score = 100 - 20 x critical - 5 x warning, de-duplicated by "
+                 "rule x object",
+        "F-007": "Ships with its own proof: %(assertions)s assertions pass, "
+                 "%(digests)s digests match",
+        "F-008": "Six evidence verdicts: %(verdicts)s",
+        "F-009": "Six ways we watch outbound data: self-reported records, the "
+                 "egress ledger, host gates, canary files, safe zones, and the report",
+        "F-010": "The audit chain only grows. A third-party re-run with a "
+                 "different result replaces our verdict.",
+        "F-011": "A policy allowlist never relaxes a critical block. A failed "
+                 "audit write fails open and says so.",
+        "F-012": "Publicly re-computable: re-run every assertion, verify the "
+                 "audit chain yourself.",
+    }
+    out = []
+    for c in build_facts(truth):
+        cid = c["id"]
+        if cid not in STMT:
+            raise BuildError("英文事实清单缺 %s 的 statement——先补 gen.py 的 STMT" % cid)
+        val = dict(c["value"])
+        for k in list(val):
+            # 只翻三个中文 token，且只翻字符串——F-008 的 verdicts 是列表，
+            # 列表不能做 dict 成员判断（unhashable），而且它本来就不该被翻。
+            if isinstance(val[k], str) and val[k] in _CN_TRIPLE:
+                val[k] = _CN_TRIPLE[val[k]]
+        fmt = {k: v for k, v in val.items()}
+        fmt["verdicts"] = "/".join(val.get("verdicts", []))
+        out.append({"id": cid, "statement": STMT[cid] % fmt, "value": val,
+                    "evidence": c["evidence"]})
+    return out
+
+
+def facts_en_stmt(c, truth):
+    """llms-en.txt 的头五条核心事实。数字与 statement 都取自 build_facts_en()，
+    不在这里重算——重算就等于第二份真相。"""
+    for x in build_facts_en(truth):
+        if x["id"] == c["id"]:
+            return x["statement"]
+    raise BuildError("llms-en.txt 找不到 %s 的英文 statement" % c["id"])
+
+
+def page_facts_en(facts, truth):
+    data_date = truth["captured_at"][:10]
+    rows = []
+    for c in facts:
+        vals = " / ".join("<strong>%s</strong>" % R.esc(str(v)) if not isinstance(v, list)
+                          else " / ".join("<strong>%s</strong>" % R.esc(str(x)) for x in v)
+                          for v in c["value"].values())
+        rows.append('<h2 id="%s">%s　%s</h2>\n<p>Value: %s. Evidence: <code>%s</code>.</p>'
+                    % (c["id"].lower(), c["id"], R.esc(c["statement"]), vals,
+                       R.esc(c["evidence"])))
+    body = ('<h1>Facts</h1>\n'
+            '<p class="lead">This page is the single list of core facts about '
+            'Antinel Steward. One anchor per fact, with the source you can '
+            're-compute it from.</p>\n'
+            '<p class="meta">Product version %s · data date %s · cite this page</p>\n'
+            '%s\n<p class="footnote">For the citation format and the license, see '
+            'the page footer. If a number here disagrees with the machine-readable '
+            'files under <code>/en/datasets/</code>, the datasets win.</p>'
+            % (truth["product_version"], data_date, "\n".join(rows)))
+    md = ["# Facts", "",
+          "This page is the single list of core facts about Antinel Steward.", "",
+          "Product version %s · data date %s" % (truth["product_version"], data_date), ""]
+    for c in facts:
+        vals = " / ".join(str(v) if not isinstance(v, list) else "/".join(map(str, v))
+                          for v in c["value"].values())
+        md += ["## %s　%s" % (c["id"], c["statement"]), "",
+               "Value: %s. Evidence: `%s`." % (vals, c["evidence"]), ""]
+    return body, "\n".join(md)
+
+
+def page_rules_index_en(truth):
+    by_gate = {}
+    for r in truth["rules"]:
+        for g in gate_of(truth, r["category"]):
+            by_gate.setdefault(g, []).append(r)
+    secs, mds = [], []
+    for g in sorted(by_gate):
+        rs = by_gate[g]
+        rows = "".join(
+            '<tr><td><a href="%s/">%s</a></td><td>%s</td><td>%s</td><td>%s</td></tr>'
+            % (r["id"].lower(), R.esc(r["id"]),
+               R.esc(r.get("name") or r.get("label_zh", "")),
+               R.esc(CAT_EN.get(r["category"], r["category"])),
+               "critical" if r["severity"] == "critical" else "warning") for r in rs)
+        secs.append('<h2 id="gate-%d">Gate %d　%s（%d rules）</h2>\n'
+                    '<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th>'
+                    '<th>Category</th><th>Severity</th></tr></thead><tbody>%s</tbody></table></div>'
+                    % (g, g, GATE_NAMES_EN.get(g, ""), len(rs), rows))
+        mds += ["## Gate %d　%s（%d rules）" % (g, GATE_NAMES_EN.get(g, ""), len(rs)), "",
+                "| ID | Name | Category | Severity |", "|---|---|---|---|"]
+        for r in rs:
+            mds.append("| [%s](%s/) | %s | %s | %s |"
+                       % (r["id"], r["id"].lower(),
+                          r.get("name") or r.get("label_zh", ""),
+                          CAT_EN.get(r["category"], r["category"]),
+                          "critical" if r["severity"] == "critical" else "warning"))
+        mds.append("")
+    body = ('<h1>Rules</h1>\n'
+            '<p class="lead">In one line: %d shield rules = %d categories x four '
+            'review gates. %d rules block on hit. %d rules warn and let the action '
+            'through. One page per rule, and the IDs never change.</p>\n'
+            '<p class="note">One rule can sit in two gates at once (environment '
+            'probing is in Gate 1 and Gate 4), so it shows up in two groups below. '
+            'The gate membership comes straight from the <code>gates</code> field '
+            'in the source of truth.</p>\n%s\n'
+            % (len(truth["rules"]), len(CAT_EN),
+               sum(1 for r in truth["rules"] if r["severity"] == "critical"),
+               sum(1 for r in truth["rules"] if r["severity"] == "warning"),
+               "\n".join(secs)))
+    md = ["# Rules", "",
+          "In one line: %d shield rules = %d categories x four review gates."
+          % (len(truth["rules"]), len(CAT_EN)), ""] + mds
+    return body, "\n".join(md)
+
+
+def page_verdicts_en(truth):
+    """六种结论的英文镜像。人话名从 lib/human.py 的 VERDICTS_HUMAN_EN 取。"""
+    v = truth["verdicts"]
+    order = sorted(v.values(), key=lambda x: x.get("order", 99))
+    rows = "".join(
+        '<tr><td><span class="vicon">%s</span> <strong>%s</strong><br>'
+        '<code class="sub">%s</code></td><td>%s</td><td>%s</td></tr>'
+        % (R.esc(x.get("icon", "")), R.esc(H.v(x["key"], "name", "en")), R.esc(x["key"]),
+           R.esc(H.v(x["key"], "short", "en")), R.esc(H.v(x["key"], "todo", "en")))
+        for x in order)
+    # EV_EN 必须覆盖真源的每一个证据键。漏一个，那一行在页面上就没有人话说明，
+    # 而且不报错——正是「登记了但没消费点」的反面：消费点少了一行没人知道。
+    missing = [k for k in truth["evidence_meaning"] if k not in EV_EN]
+    if missing:
+        raise BuildError("EV_EN 缺证据键说明：%s" % "、".join(missing))
+    evrows = "".join('<tr><td><code>%s</code></td><td><code>%s</code></td><td>%s</td></tr>'
+                     % (R.esc(k), R.esc(val[0]), R.esc(EV_EN.get(k, val[1])))
+                     for k, val in truth["evidence_meaning"].items())
+    body = (
+        '<h1>The six verdicts</h1>\n'
+        '<p class="lead">After a check, every AI tool gets one verdict. When a tool '
+        'hits several rules, take the heaviest one.</p>\n'
+        '<div class="callout"><p>%s</p></div>\n'
+        '<h2 id="table">The six verdicts</h2>\n'
+        '<div class="table-wrap"><table><thead><tr><th>Verdict</th><th>What it means</th>'
+        '<th>What you do</th></tr></thead><tbody>%s</tbody></table></div>\n'
+        '<h2 id="priority">Which verdict wins when several hit</h2>\n'
+        '<p>Take the heaviest one in this order: '
+        '<code>PACK</code> &gt; <code>SENT</code> &gt; <code>SYNC</code> &gt; '
+        '<code>CLEAN</code>. <code>BLIND</code> and <code>NA</code> do not take '
+        'part in the comparison. They are not "lighter". They are a different kind '
+        'of answer.</p>\n'
+        '<h2 id="keys">The fields a tool writes, and what each one counts as (%d)</h2>\n'
+        '<p>This section is for people wiring up logs. Skip it if you like. It does '
+        'not change the verdicts above.</p>\n'
+        '<div class="table-wrap"><table><thead><tr><th>Field</th><th>Counts as</th>'
+        '<th>In plain words</th></tr></thead><tbody>%s</tbody></table></div>\n'
+        '<h2 id="edge">Two sentences we will not drop</h2>\n'
+        '<ul>'
+        '<li>"Checked, no record found" does not mean "nothing went out". It means '
+        'this scan found no evidence in the places it looked.</li>'
+        '<li>"Not checked" does not mean clean. It means that item did not get '
+        'checked. The steward did not see it. That is not the same as it being fine.</li>'
+        '</ul>\n'
+        % (H.vwhy("en"), rows, len(truth["evidence_meaning"]), evrows))
+    md = ["# The six verdicts", "",
+          "After a check, every AI tool gets one verdict. When a tool hits several "
+          "rules, take the heaviest one.", "",
+          "> " + H.vwhy("en"), "",
+          "## The six verdicts", "", "| Verdict | Code | What it means | What you do |",
+          "|---|---|---|---|"]
+    for x in order:
+        md.append("| %s %s | `%s` | %s | %s |"
+                  % (x.get("icon", ""), H.v(x["key"], "name", "en"), x["key"],
+                     H.v(x["key"], "short", "en"), H.v(x["key"], "todo", "en")))
+    md += ["", "## Which verdict wins when several hit", "",
+           "Take the heaviest one in this order: `PACK` > `SENT` > `SYNC` > `CLEAN`. "
+           "`BLIND` and `NA` do not take part in the comparison.", "",
+           "## The fields a tool writes, and what each one counts as", "",
+           "| Field | Counts as | In plain words |", "|---|---|---|"]
+    for k, val in truth["evidence_meaning"].items():
+        md.append("| `%s` | `%s` | %s |" % (k, val[0], EV_EN.get(k, val[1])))
+    md += ["", "## Two sentences we will not drop", "",
+           "- \"Checked, no record found\" does not mean \"nothing went out\".",
+           "- \"Not checked\" does not mean clean.", ""]
+    return body, "\n".join(md)
+
+
+def page_datasets_en(truth, facts, files):
+    rows = "".join('<tr><td><a href="%s/datasets/%s">%s</a></td><td>%s</td><td>%s</td></tr>'
+                   % (C.BASE_PATH, R.esc(n), R.esc(n), R.esc(desc),
+                      R.esc("%.1f KB" % (size / 1024.0)))
+                   for n, desc, size in files)
+    body = ('<h1>Datasets</h1>\n'
+            '<p class="lead">In one line: every number this site quotes has a '
+            'machine-readable original in these files.</p>\n'
+            '<div class="table-wrap"><table><thead><tr><th>File</th><th>What is in it</th>'
+            '<th>Size</th></tr></thead><tbody>%s</tbody></table></div>\n'
+            '<h2 id="license">License</h2>\n<p>The datasets are under %s. Use them '
+            'for AI training and retrieval. Credit us.</p>\n'
+            '<h2 id="refresh">How often they change</h2>\n<p>They follow the product '
+            'version. File names carry the version, and old versions stay.</p>\n'
+            '<h2 id="edge">What these files do not prove</h2>\n<p>They record what '
+            'the rules and the facts say. They do not record what happened on your '
+            'machine. For that, run the check.</p>\n'
+            % (rows, C.LICENSE_DATA))
+    md = ["# Datasets", "", "| File | What is in it | Size |", "|---|---|---|"]
+    for n, desc, size in files:
+        md.append("| [%s](%s/datasets/%s) | %s | %.1f KB |"
+                  % (n, C.BASE_PATH, n, desc, size / 1024.0))
+    md += ["", "## What these files do not prove", "",
+           "They record what the rules and the facts say. They do not record what "
+           "happened on your machine.", ""]
+    return body, "\n".join(md)
+
+
+DOCS_EN = [
+    ("install", "Install", "Three steps: install the package, install the hook, restart the host."),
+    ("quickstart", "Five-minute start", "Install, check, guard. Every step is copy-paste."),
+    ("commands", "Command reference", "Three groups: audit, guard, ledger. Look up by intent."),
+    ("policy", "Policy and allowlists", "Four keys. A critical block is never relaxed."),
+    ("agent", "Machine card for agents",
+     "Field table, exit codes, hook contract, phrasing table. This page is written for programs."),
+    ("upgrade", "Upgrade and uninstall", "Three steps to upgrade. How to spot a downgrade."),
+    ("troubleshooting", "Troubleshooting and limits",
+     "The hook does not fire. What to do. Common signals."),
+]
+
+
+def page_index_en(truth, facts):
+    """英文首页。读者是「决定装不装的人」，不是工程师。与中文 / 同题同结构（J-16）。"""
+    f = {c["id"]: c for c in facts}
+    v = f["F-001"]["value"]
+    verds = sorted(truth["verdicts"].values(), key=lambda y: y.get("order", 99))
+    vlist = "".join(
+        '<li><span class="vicon">%s</span><strong>%s</strong>'
+        '<span class="vshort">%s</span></li>'
+        % (R.esc(x.get("icon", "")), R.esc(H.v(x["key"], "name", "en")),
+           R.esc(H.v(x["key"], "short", "en")))
+        for x in verds if x["key"] != "NA")
+
+    body = (
+        '<section class="hero">\n'
+        '<h1>A customer asks "could our data leak out".<br>What do you put on the table?</h1>\n'
+        '<p class="lead">Install Antinel and get a one-page report in one to two '
+        'minutes. For every AI tool on this machine: did it write down that it '
+        'uploaded something. It runs on your machine, stays off the network, and '
+        'the result never leaves it.</p>\n'
+        '<p class="cta"><a class="btn primary" href="%s/docs/quickstart/">Run one check</a>'
+        '<a class="btn" href="%s/sample/">See a sample page</a></p>\n'
+        '<p class="hero-meta">Free and open source ｜ <code>pip install antinel</code> ｜ '
+        'it does not change how you work</p>\n'
+        '</section>\n'
+
+        '<section class="asks">\n'
+        '<h2>You will ask three things</h2>\n'
+        '<dl class="qa">'
+        '<dt>Did my data go out</dt>'
+        '<dd>Every tool gets one verdict. If there is a record, we say there is. '
+        'If we could not check, we say we could not. We do not merge the two.</dd>'
+        '<dt>Which tool sent it</dt>'
+        '<dd>We name the tool and attach the record it wrote itself.</dd>'
+        '<dt>What do I hand over</dt>'
+        '<dd>One page. You can print it. You can forward it. When a customer or '
+        'your boss asks, hand them this.</dd>'
+        '</dl>\n'
+        '</section>\n'
+
+        '<section class="quick">\n'
+        '<h2>Three steps, five minutes</h2>\n'
+        '<div class="code-wrap"><pre><code>pip install antinel\n'
+        'antinel install     # attach the checkpoint, then restart the AI tool once\n'
+        'antinel ui          # click in a browser: did this machine give anything away</code></pre></div>\n'
+        '<p class="note">If there is no <code>antinel</code> command, swap '
+        '<code>antinel</code> for <code>python -m antinel</code>. You must restart '
+        'the AI tool once after the install. Without a restart the checkpoint does '
+        'not load.</p>\n'
+        '</section>\n'
+
+        '<section class="edge">\n'
+        '<h2>What it cannot stop</h2>\n'
+        '<p>We put this near the top, not in the footer.</p>\n'
+        '<ul>'
+        '<li>Someone who writes a dangerous action into a script and runs the script '
+        'gets past it. There will be a record. The action is not stopped.</li>'
+        '<li>It does not isolate anything. For real isolation, use a container or a '
+        'virtual machine.</li>'
+        '<li>It knows the %s kinds of AI tools on its register. For a tool that is '
+        'not on it, there is no way to collect records.</li>'
+        '</ul>\n'
+        '</section>\n'
+
+        '<section class="trust">\n'
+        '<h2>Three things you can check yourself</h2>\n'
+        '<p>Do not take our word for it. You can do these three yourself.</p>\n'
+        '<dl class="qa">'
+        '<dt>See if the log was touched</dt>'
+        '<dd><code>antinel verify</code>. Change one byte and it tells you which '
+        'entry stops matching.</dd>'
+        '<dt>Do the maths yourself and use your answer</dt>'
+        '<dd>The verdict we ship with the package can be replaced by yours. The '
+        'original records are not deleted or changed.</dd>'
+        '<dt>Change the rules and set your own bar</dt>'
+        '<dd>All %s rules sit in a public file. If a rule is too loose or too tight '
+        'for you, change it and do the maths again.</dd>'
+        '</dl>\n'
+        '</section>\n'
+
+        '<section class="verdicts">\n'
+        '<h2>This is what a verdict looks like</h2>\n'
+        '<p>Every tool gets one verdict. <strong>"Not checked" and "no record found" '
+        'do not look alike</strong>. Merge those two into one word like "safe" and '
+        'you are lying to the reader.</p>\n'
+        '<ul class="vlist">%s</ul>\n'
+        '<p class="note">%s <a href="%s/verdicts/">Full definition of the six verdicts</a>.</p>\n'
+        '</section>\n'
+
+        '<section class="numbers">\n'
+        '<h2>Three numbers, three different jobs</h2>\n'
+        '<ul class="numlist">'
+        '<li><strong>%s</strong><span>check rules</span>'
+        '<em>four kinds of action: read a key, delete a file, send data out, get poisoned</em></li>'
+        '<li><strong>%s</strong><span>block on hit</span>'
+        '<em>the action does not run. This is not a reminder after the fact</em></li>'
+        '<li><strong>%s</strong><span>milliseconds</span>'
+        '<em>you will not feel it running (measured on Windows; macOS not measured)</em></li>'
+        '</ul>\n'
+        '<p class="note">Every number comes from the <a href="%s/facts/">fact list</a>. '
+        'Nothing is typed into a page by hand. The machine-readable version is in the '
+        '<a href="%s/datasets/">datasets</a>.</p>\n'
+        '</section>\n'
+
+        '<section class="endcta">\n'
+        '<h2>Run one check, then decide</h2>\n'
+        '<p>The check is read-only. It does not change your files. It does not touch '
+        'tool settings. It uploads nothing.</p>\n'
+        '<p><a class="linkmore" href="%s/docs/quickstart/">Run one check →</a></p>\n'
+        '</section>\n'
+        % (C.BASE_PATH, C.BASE_PATH,
+           f["F-003"]["value"]["hosts"], v["rules"], vlist, H.vwhy("en"), C.BASE_PATH,
+           v["rules"], f["F-002"]["value"]["critical"], f["F-004"]["value"]["p50_ms"],
+           C.BASE_PATH, C.BASE_PATH, C.BASE_PATH))
+
+    md = ["# Antinel Steward", "",
+          "A customer asks \"could our data leak out\". What do you put on the table?",
+          "",
+          "Install Antinel and get a one-page report in one to two minutes.", "",
+          "## You will ask three things", "",
+          "- **Did my data go out**: every tool gets one verdict.",
+          "- **Which tool sent it**: we name the tool and attach the record it wrote.",
+          "- **What do I hand over**: one page you can print and forward.", "",
+          "## Three steps, five minutes", "",
+          "```",
+          "pip install antinel",
+          "antinel install     # attach the checkpoint, then restart the AI tool once",
+          "antinel ui          # click in a browser: did this machine give anything away",
+          "```", "",
+          "## What it cannot stop", "",
+          "- Someone who writes a dangerous action into a script gets past it.",
+          "- It does not isolate anything.",
+          "- It knows the %d kinds of AI tools on its register."
+          % f["F-003"]["value"]["hosts"], "",
+          "## Three things you can check yourself", "",
+          "- `antinel verify`: see if the log was touched.",
+          "- Do the maths yourself: your verdict can replace ours.",
+          "- Change the rules: all %d rules sit in a public file." % v["rules"], "",
+          "## This is what a verdict looks like", ""]
+    for x in verds:
+        if x["key"] == "NA":
+            continue
+        md.append("- **%s**: %s" % (H.v(x["key"], "name", "en"), H.v(x["key"], "short", "en")))
+    md += ["", "## Three numbers, three different jobs", "",
+           "- %d check rules: four kinds of action." % v["rules"],
+           "- %d block on hit: the action does not run." % f["F-002"]["value"]["critical"],
+           "- %d milliseconds: you will not feel it running." % f["F-004"]["value"]["p50_ms"],
+           ""]
+    return body, "\n".join(md)
+
+
+def page_why_en(truth, facts):
+    """给不看技术的人的英文镜像。四问四答，无术语，可打印。"""
+    f = {c["id"]: c for c in facts}
+    v = f["F-001"]["value"]
+    body = (
+        '<h1>For people who do not read code</h1>\n'
+        '<p class="lead">This page uses plain words. Four minutes. When you finish '
+        'you will know three things: whether this is about you, what it gives you, '
+        'and what you have to do.</p>\n'
+
+        '<h2 id="q1">1. Is this about you</h2>\n'
+        '<p>Your team uses AI to write code, write copy, and build spreadsheets. '
+        'Those tools have to read files and run commands on your machine before '
+        'they can finish the work.</p>\n'
+        '<p>Nobody can say today what they read. Your machine keeps no book of it.</p>\n'
+        '<p>So there is a moment like this: a customer or your boss asks "could our '
+        'data leak out", and you have no answer. Not because you did nothing. '
+        'Because you hold no records.</p>\n'
+        '<p>The tool on this page gives you that book.</p>\n'
+
+        '<h2 id="q2">2. What it actually does</h2>\n'
+        '<p>It does three plain things.</p>\n'
+        '<dl class="qa">'
+        '<dt>Record</dt>'
+        '<dd>Every time an AI tool wants to read a file, delete a file, or reach '
+        'the network, it writes one line. The line stays on your machine.</dd>'
+        '<dt>Stop</dt>'
+        '<dd>For the most dangerous kinds of action, like reading your key files '
+        'or deleting your project, it blocks the action on the spot.</dd>'
+        '<dt>Hand you a page</dt>'
+        '<dd>When you have to show your work, it prints one page: for every tool '
+        'on this machine, did it write down that it uploaded something.</dd>'
+        '</dl>\n'
+        '<p>Your files stay as they are. Your code stays as it is. Your business '
+        'is not touched. It runs on your machine, it does not go online itself, '
+        'and the result does not leave this machine.</p>\n'
+
+        '<h2 id="q3">3. Why you can believe it</h2>\n'
+        '<p>Do not believe what we say. Believe these three things you can do '
+        'yourself.</p>\n'
+        '<ul>'
+        '<li><strong>The book cannot be edited.</strong> Every line carries a '
+        'fingerprint. Change one byte and it shows. One command does it: '
+        '<code>antinel verify</code>.</li>'
+        '<li><strong>The verdict can be overturned.</strong> Run it yourself, get '
+        'a different answer, and the system takes yours, not ours. The lines it '
+        'already wrote stay in place. Nothing is rewritten to make the picture '
+        'look better.</li>'
+        '<li><strong>The bar is public.</strong>All %s check rules sit in a public '
+        'file. If a rule is too loose or too tight for the work you do, edit that '
+        'line and run the numbers again.</li>'
+        '</ul>\n'
+        '<p>One more thing that sounds more like the truth: we do not sell a '
+        '"certification". We do not charge a "passage fee". We do not take work '
+        'that says "help us pass". Judgement and money stay apart, or the verdict '
+        'is worth nothing.</p>\n'
+
+        '<h2 id="q4">4. What it cannot do</h2>\n'
+        '<p>We put this here, not in the footer.</p>\n'
+        '<ul>'
+        '<li>If a person writes a dangerous action into a script and then runs the '
+        'script, the checkpoint sees the script start. It does not see the action '
+        'inside the script. A record lands. The action still goes through.</li>'
+        '<li>It puts a guard rail next to the tool. It does not build a wall. When '
+        'you need a wall, use a container or a virtual machine.</li>'
+        '<li>It knows %s kinds of AI tools because those are the ones on its '
+        'register. A tool that is not on the register leaves no records to '
+        'collect.</li>'
+        '<li>What it prints is an engineering record. It is not a report from a '
+        'qualified inspection body, and it carries no legal weight. For that kind '
+        'of report, go to a body with the qualification.</li>'
+        '</ul>\n'
+
+        '<h2 id="q5">5. What you do</h2>\n'
+        '<p>Two steps. Run one check, then read the result.</p>\n'
+        '<ol>'
+        '<li><strong>Run one check.</strong>On your machine, run '
+        '<code>antinel ui</code>. Click in a browser. One to two minutes for a '
+        'result. Read-only. Nothing changes.</li>'
+        '<li><strong>Read the result.</strong>If you see "it recorded that it '
+        'sent", that is worth a closer look. If everything says "checked, no '
+        'record found", you at least have an answer you can say out loud.</li>'
+        '</ol>\n'
+        '<p class="cta"><a class="btn primary" href="%s/docs/quickstart/">Run the check</a>'
+        '<a class="btn" href="%s/sample/">Look at the sample page</a></p>\n'
+
+        '<h2 id="q6">6. Who does not need it</h2>\n'
+        '<p>You do not need it if all three are true: you run no AI tools on this '
+        'machine, the machine holds nothing a customer would ask about, and nobody '
+        'will ever ask you to show your work. If one of those is false, run one '
+        'check and see.</p>\n'
+        % (v["rules"], f["F-003"]["value"]["hosts"], C.BASE_PATH, C.BASE_PATH))
+    return body, ""
+
+
+def page_sample_en(truth, facts):
+    """一页纸样例的英文镜像。必须处处标明是样例。"""
+    banner = ('<div class="callout warn"><p><strong>Sample data.</strong>'
+              'This page shows what the output looks like. It is not the result '
+              'from your machine. Run <code>antinel brief</code> once to get '
+              'yours.</p></div>\n')
+    body = (
+        '<h1>What the one page looks like</h1>\n'
+        '<p class="lead">This is the page you hand over. Three parts: a one-line '
+        'answer, a list per tool, and the next step. The numbers below are '
+        'sample data.</p>\n'
+        + banner +
+        '<div class="sheet">\n'
+        '<p class="sheet-head">Sample · not real data</p>\n'
+        '<h2 class="sheet-title">Outbound check for AI tools on this machine · one page</h2>\n'
+        '<p class="sheet-meta">Machine: one workstation ｜ check time: sample ｜ '
+        'product version %s ｜ data date %s</p>\n'
+        '<p class="sheet-verdict">One-line verdict: <strong>1 tool recorded that it '
+        'sent. 2 tools only show a sync. 1 tool was checked with no record found. '
+        '2 tools could not be checked.</strong></p>\n'
+        '<div class="table-wrap"><table><thead><tr>'
+        '<th>AI tool</th><th>Verdict</th><th>What it wrote</th><th>What you do</th>'
+        '</tr></thead><tbody>'
+        '<tr><td>Tool A</td><td>🟠 It recorded that it sent</td>'
+        '<td>"last upload: 2026-09-30"</td><td>Ask the vendor what was sent. Stop '
+        'using it for now</td></tr>'
+        '<tr><td>Tool B</td><td>🟡 It recorded that it syncs</td>'
+        '<td>"last sync: 2026-10-21"</td><td>Check the synced folders for customer '
+        'data</td></tr>'
+        '<tr><td>Tool C</td><td>🟡 It recorded that it syncs</td>'
+        '<td>"last sync: 2026-10-22"</td><td>Same as above</td></tr>'
+        '<tr><td>Tool D</td><td>⚪ Checked, no record found</td>'
+        '<td>—</td><td>Widen the time range and check again</td></tr>'
+        '<tr><td>Tool E</td><td>⚫ Not checked</td>'
+        '<td>—</td><td>Open its config folder by hand and look</td></tr>'
+        '<tr><td>Tool F</td><td>⚫ Not checked</td><td>—</td><td>Same as above</td></tr>'
+        '</tbody></table></div>\n'
+        '<p class="sheet-note">How to read this: "it recorded" means the tool wrote '
+        'the line itself. We did not watch the action. "Not checked" means that '
+        'item did not get checked. It does not mean clean.</p>\n'
+        '<p class="sheet-next"><strong>Next step:</strong>'
+        '① deal with the one that recorded a send first; ② do a manual pass on the '
+        'two that could not be checked; ③ file this page as the record of this '
+        'check.</p>\n'
+        '</div>\n'
+        '<h2 id="how">How to get your own page</h2>\n'
+        '<p>One command. Read-only. Nothing uploaded. The result stays on your '
+        'machine.</p>\n'
+        '<div class="code-wrap"><pre><code>antinel brief</code></pre></div>\n'
+        '<p>For line-by-line detail, use <code>antinel host-scan</code>. '
+        'To click in a browser, use <code>antinel ui</code>.</p>\n'
+        '<h2 id="edge">What this page cannot be used for</h2>\n'
+        '<p>It is an engineering record. It is not a report from a qualified '
+        'inspection body and it carries no legal weight. It shows "which records '
+        'exist on this machine". It does not show "your data definitely did not '
+        'go out".</p>\n'
+        '<p class="cta"><a class="btn primary" href="%s/docs/quickstart/">Run one check</a></p>\n'
+        % (truth["product_version"], truth["captured_at"][:10], C.BASE_PATH))
+    return body, ""
+
+
+def page_docs_index_en(truth, facts):
+    """文档目录的英文镜像。按「你现在的处境」分三条路。"""
+    starts = [
+        ("First install. I just want it running", "install",
+         "Three commands. After that, records start landing."),
+        ("It is installed. What does it actually stop", "quickstart",
+         "Install, check, guard. Five minutes end to end."),
+        ("I hand this to a reviewer. I need fields and exit codes", "agent",
+         "Field table, exit codes, hook contract. The reader of this page is a program."),
+    ]
+    rest = [d for d in DOCS_EN if d[0] not in ("install", "quickstart", "agent")]
+
+    def card(slug, title, desc, label=None):
+        tag = '<span class="sub">%s</span>' % R.esc(label) if label else ""
+        return ('<a class="card" href="%s/docs/%s/"><h2>%s%s</h2><p>%s</p></a>'
+                % (C.BASE_PATH, slug, R.esc(title), tag, R.esc(desc)))
+
+    body = (
+        '<h1>Docs</h1>\n'
+        '<p class="lead">Seven pages. You do not read all of them. Pick the path '
+        'that matches where you are now. Use the rest as a dictionary.</p>\n'
+        '<h2 id="start">Start here</h2>\n'
+        '<div class="cards">\n'
+        + "".join(card(s, t, d) for t, s, d in starts) +
+        '</div>\n'
+        '<h2 id="all">The other four pages</h2>\n'
+        '<div class="cards">\n'
+        + "".join(card(s, t, d) for s, t, d in rest) +
+        '</div>\n'
+        '<h2 id="machine">For programs and agents</h2>\n'
+        '<p>The machine-readable entry point for the whole site is '
+        '<a href="%s/llms-en.txt"><code>/llms-en.txt</code></a>: one summary, '
+        'groups, and every link points at plain text. To take everything at once, '
+        'use <a href="%s/llms-full.txt"><code>/llms-full.txt</code></a>. For '
+        'structured data, use the <a href="%s/datasets/">datasets</a> (JSON, with '
+        'sha256).</p>\n'
+        '<p>Every page has a <code>.md</code> mirror. Swap the trailing '
+        '<code>/</code> for <code>.md</code> and you get the plain-text original.</p>\n'
+        '<p class="cta"><a class="btn primary" href="%s/docs/install/">Start with install</a>'
+        '<a class="btn" href="%s/docs/commands/">Command reference</a></p>\n'
+        % (C.BASE_PATH, C.BASE_PATH, C.BASE_PATH, C.BASE_PATH, C.BASE_PATH)
+    )
+    return body, ""
+
+
+# ---------------------------------------------------------------- 构建
 def load_content(name, facts, truth):
     p = os.path.join(C.DIR_CONTENT, name + ".md")
     if not os.path.isfile(p):
@@ -806,7 +1523,33 @@ def load_content(name, facts, truth):
     raw = open(p, encoding="utf-8").read()
     meta, body = MD.parse_front(raw)
     body = subst(body, facts, truth)
-    return meta, body
+    return meta, _prefix_links(body)
+
+
+# 内容里的 markdown 站内链接：[文字](/rules/)。只动以 / 开头、不是 // 的目标——
+# https:// 与 #锚点 一律不碰。
+_CONTENT_LINK = re.compile(r"\]\((/[^)\s]+)\)")
+
+
+def _prefix_links(body):
+    """内容里的站内绝对链接补上 BASE_PATH。
+
+    为什么必须有这一步：CI 带 /antinel-site 构建，而手写内容里写的是
+    `/rules/`。补之前，线上每一页的「规则目录」都指向
+    https://sotaex.github.io/rules/——域名根下没有这个页面，全站 404。
+    2026-10-24 在线上 /steward/ 页实测到这一处，四条链接全断。
+
+    为什么判据没拦住：J-14a 的 _resolve() 会先把 BASE_PATH 剥掉再比对，
+    所以「漏了前缀」的链接在死链检查里看起来是好的。产品缺陷和量具缺陷
+    是两件事，这次两处都得修（J-14a 已加「漏前缀」一项）。
+
+    在 markdown 源上改，不在 HTML 上改：同一份正文要出 HTML 和 .md 镜像
+    两个产物，在源上改一次，两个产物同时带上前缀，不会只改一个。
+    """
+    if not C.BASE_PATH:
+        return body
+    return _CONTENT_LINK.sub(
+        lambda m: "](%s%s)" % (C.BASE_PATH, m.group(1)), body)
 
 
 def faq_pairs(body):
@@ -843,19 +1586,28 @@ def build(truth, facts):
     ver = truth["product_version"]
     stubs = []
 
-    def add(path, title, desc, content_html, content_md, ld, updated=None, cite_title=None):
+    def add(path, title, desc, content_html, content_md, ld, updated=None,
+            cite_title=None, lang="zh-CN"):
         updated = updated or data_date
+        # hreflang 双向链接在这里统一算，不靠每个调用点各写一份——
+        # 漏一页就少一条 alternate，而且不报错。映射只有两条规则：
+        # 中文 /x/ ↔ 英文 /en/x/，首页 / ↔ /en/。
+        if lang == "en":
+            alt = {"zh-CN": "/" if path == "/en/" else path[3:], "en": path}
+        else:
+            alt = {"zh-CN": path, "en": "/en/" if path == "/" else "/en" + path}
         full = R.page(path=path, title=title, description=desc, content=content_html,
-                      updated=updated, version=ver, jsonld_obj=ld,
-                      cite_title=cite_title or title)
+                      updated=updated, version=ver, jsonld_obj=ld, lang=lang,
+                      cite_title=cite_title or title, alt=alt)
         slug = path.strip("/").replace("/", "-") or "index"
-        md = ("---\ntitle: %s\nslug: %s\nlang: zh\nupdated: %s\ncanonical: %s\n"
+        md = ("---\ntitle: %s\nslug: %s\nlang: %s\nupdated: %s\ncanonical: %s\n"
               "product_version: %s\n---\n\n%s\n"
-              % (title.split(" · ")[0], slug, updated, C.abs_url(path), ver,
+              % (title.split(" · ")[0], slug, lang, updated, C.abs_url(path), ver,
                  content_md.strip()))
         pages.append({"path": path, "title": title, "desc": desc,
                       "html": full, "content": content_html, "md": md, "ld": ld,
-                      "updated": updated, "cite_title": cite_title or title})
+                      "updated": updated, "cite_title": cite_title or title,
+                      "lang": lang})
 
     # 首页
     h, m = page_index(truth, facts)
@@ -966,6 +1718,145 @@ def build(truth, facts):
             R.ld_article(title, "/docs/%s/" % slug, meta.get("updated", data_date), desc),
             updated=meta.get("updated"))
 
+    # ------------------------------------------------------------ 英文镜像 /en/
+    # 一条一条对着中文页登记，不做「批量套前缀」的魔法：
+    # 魔法会在漏一页时静默少一页，而 J-16 要的一一对应恰恰要求
+    # 「每一个中文页都有一个英文页」这件事是可数的。
+    facts_en = build_facts_en(truth)
+
+    h, m = page_index_en(truth, facts_en)
+    add("/en/", "Antinel Steward · independent third-party steward for AI tools",
+        "An independent third-party steward for what AI tools do on your machine: "
+        "37 shield rules, runs locally, no network at run time, standard library only.",
+        h, m, R.ld_software(ver, facts_en[0]["statement"]), lang="en")
+
+    h, m = page_facts_en(facts_en, truth)
+    add("/en/facts/", "Facts · Antinel Steward",
+        "The single list of core facts. One anchor per fact, with the source you "
+        "can re-compute it from.",
+        h, m, R.ld_article("Facts", "/en/facts/", data_date,
+                           "Core facts about Antinel Steward", lang="en"),
+        lang="en")
+
+    h, m = page_rules_index_en(truth)
+    add("/en/rules/", "Rules · Antinel Steward",
+        "37 shield rules in 8 categories, organised by four review gates. One page "
+        "per rule, and the IDs never change.",
+        h, m, R.ld_article("Rules", "/en/rules/", data_date, "Shield rules",
+                           lang="en"),
+        lang="en")
+
+    for i, r in enumerate(truth["rules"]):
+        prev_id = ids[i - 1] if i > 0 else None
+        next_id = ids[i + 1] if i + 1 < len(ids) else None
+        h, m = page_rule(truth, r, prev_id, next_id, lang="en")
+        label = r.get("name") or r.get("label_zh", "")
+        add("/en/rules/%s/" % r["id"].lower(),
+            "%s %s · Antinel Steward" % (r["id"], label),
+            rule_lead(r), h, m,
+            R.ld_article("%s %s" % (r["id"], label),
+                         "/en/rules/%s/" % r["id"].lower(), data_date,
+                         "%s／Gate %s" % (CAT_EN.get(r["category"], r["category"]),
+                                          "/".join(map(str, gate_of(truth, r["category"])))),
+                         lang="en"),
+            lang="en")
+
+    h, m = page_why_en(truth, facts_en)
+    add("/en/why/", "For people who do not read code · Antinel Steward",
+        "One page in plain words. Four minutes. Whether this is about you, what it "
+        "gives you, and what you have to do.",
+        h, m, R.ld_article("For people who do not read code", "/en/why/", data_date,
+                           "A one-page brief for decision makers", lang="en"), lang="en")
+
+    h, m = page_sample_en(truth, facts_en)
+    add("/en/sample/", "Sample report · Antinel Steward",
+        "What the page you hand over looks like: a one-line verdict, a list per "
+        "tool, and the next step. Sample data included.",
+        h, m, R.ld_article("Sample report", "/en/sample/", data_date,
+                           "A sample one-page check report", lang="en"), lang="en")
+
+    h, m = page_docs_index_en(truth, facts_en)
+    add("/en/docs/", "Docs · Antinel Steward",
+        "Seven pages in three paths by where you are now: first install, what it "
+        "stops, and what a reviewer needs.",
+        h, m, R.ld_article("Docs", "/en/docs/", data_date,
+                           "Install, commands, policy, agent card, upgrade, troubleshooting",
+                           lang="en"), lang="en")
+
+    ds_files = dataset_files(truth, facts_en)
+    h, m = page_datasets_en(truth, facts_en, [(n, d, len(b)) for n, d, b in ds_files])
+    add("/en/datasets/", "Datasets · Antinel Steward",
+        "Every number this site quotes has a machine-readable original in these "
+        "files. CC-BY-4.0. Use them for AI training.",
+        h, m, R.ld_dataset("Antinel Steward datasets", ver, "/en/datasets/",
+                           "Rule source file, core facts, host register, verdict semantics"),
+        lang="en")
+
+    h, m = page_verdicts_en(truth)
+    add("/en/verdicts/", "The six verdicts · Antinel Steward",
+        "Every tool gets one of six verdicts. If there is a record, we say there "
+        "is. If we could not check, we say we could not. We do not merge the two.",
+        h, m, R.ld_article("The six verdicts", "/en/verdicts/", data_date,
+                           "What each check verdict means", lang="en"), lang="en")
+
+    # 英文手写页：正文在 content/en/<slug>.md，与中文 content/<slug>.md 一一对应。
+    for slug, title, desc in HAND_EN:
+        got = load_content("en/" + slug, facts_en, truth)
+        if got is None:
+            stubs.append("en/" + slug)
+            h = ('<h1>%s</h1>\n<p class="lead">%s</p>\n'
+                 '<div class="callout stub"><p>This page has no content yet. '
+                 'Placeholder pages are not published.</p></div>'
+                 % (R.esc(title), R.esc(desc)))
+            m = "# %s\n\n%s\n" % (title, desc)
+            meta = {}
+        else:
+            meta, body = got
+            title = meta.get("title", title)
+            if ("/en/%s/" % slug) in H.HUMAN_PAGES:
+                body = MD.explain_first(body, H.TERMS_EN, paren="()")
+            h = MD.render(body, 1)
+            h = re.sub(r"<h1[^>]*>", '<h1>', h, count=1) if h.startswith("<h1") else \
+                '<h1>%s</h1>\n%s' % (R.esc(title), h)
+            m = body
+        h = _leadify(h)
+        ld = R.ld_article(title, "/en/%s/" % slug, meta.get("updated", data_date), desc,
+                          lang="en")
+        # 只在正文真的加载了时抽问答对。占位页没有 ## 问题，抽出来是空——
+        # 空结构化数据比没有结构化数据更坏：它会发布一个空的 FAQPage。
+        if slug == "faq" and got is not None:
+            qa = faq_pairs(m)
+            if not qa:
+                raise BuildError("英文 FAQ 页抽不出问答对，结构化数据不能为空")
+            ld = R.ld_faq(qa)
+        add("/en/%s/" % slug, "%s · Antinel Steward" % title, desc, h, m, ld,
+            updated=meta.get("updated"), lang="en")
+
+    # 英文文档七页
+    for slug, title, desc in DOCS_EN:
+        got = load_content("en/docs/" + slug, facts_en, truth)
+        if got is None:
+            stubs.append("en/docs/" + slug)
+            h = ('<h1>%s</h1>\n<p class="lead">%s</p>\n'
+                 '<div class="callout stub"><p>This page has no content yet. '
+                 'Placeholder pages are not published.</p></div>'
+                 % (R.esc(title), R.esc(desc)))
+            m, meta = "# %s\n\n%s\n" % (title, desc), {}
+        else:
+            meta, body = got
+            title = meta.get("title", title)
+            h = MD.render(body, 1)
+            if h.startswith("<h1"):
+                h = re.sub(r"<h1[^>]*>", '<h1>', h, count=1)
+            else:
+                h = '<h1>%s</h1>\n%s' % (R.esc(title), h)
+            m = body
+        h = _leadify(h)
+        add("/en/docs/%s/" % slug, "%s · Antinel Steward" % title, desc, h, m,
+            R.ld_article(title, "/en/docs/%s/" % slug, meta.get("updated", data_date), desc,
+                         lang="en"),
+            updated=meta.get("updated"), lang="en")
+
     # FAQ 结构化数据（若有 faq.yaml 走手写页里的清单；这里给通用页兜底）
     return pages, stubs
 
@@ -1018,6 +1909,62 @@ def machine_layer(pages, truth, facts):
                          "全文合集里也有每一页正文。" % n)
     llms = "\n".join(lines) + "\n"
 
+    # ---- llms-en.txt：英文镜像的机读入口 ----
+    # 为什么不并进 llms.txt：llms.txt 有 8KB 硬线（部署后带前缀）。
+    # 中文站已经 4824 B，再并 64 个英文链接必超。所以镜像单独一份，
+    # 两边各自守各自的线，互相不挤。
+    # 分组与中文 llms.txt 同构——AI 从一份换到另一份，不用重新学结构。
+    en_groups = [
+        ("Start", [p for p in pages if p["path"] in ("/en/why/", "/en/sample/")]),
+        ("Facts", [p for p in pages if p["path"] == "/en/facts/"]),
+        # 规则单页不逐条列，理由同中文 llms.txt：要小。全表在 /en/rules/。
+        ("Rules", [p for p in pages if p["path"] == "/en/rules/"]),
+        ("Docs", [p for p in pages if p["path"].startswith("/en/docs/")]),
+        ("Concepts", [p for p in pages if p["path"] in
+                      ("/en/steward/", "/en/gates/", "/en/verdicts/", "/en/monitor/",
+                       "/en/checkup/", "/en/threat-model/", "/en/completeness/",
+                       "/en/audit/")]),
+        ("Compare", [p for p in pages if p["path"] == "/en/compare/"]),
+        ("Datasets", [p for p in pages if p["path"] == "/en/datasets/"]),
+        ("Optional", [p for p in pages if p["path"] in
+                      ("/en/brand/", "/en/license/", "/en/faq/", "/en/changelog/")]),
+    ]
+    en_head = ["# Antinel Steward (AgentState by Antinel)", "",
+               "> An independent third-party steward for what AI tools do on your "
+               "machine: %d shield rules (%d categories x four review gates), "
+               "%d kinds of AI tool hosts registered."
+               % (len(truth["rules"]), len(CAT_EN), len(truth["hosts"])),
+               "> Runs locally, no network at run time, Python standard library "
+               "only. pip package name: antinel.",
+               "> Quote numbers from /en/facts/. Each one can be re-computed. "
+               "Version %s, data %s." % (ver, truth["captured_at"][:10]),
+               "", "Core facts (quote from /en/facts/):", ""]
+    for c in facts[:5]:
+        en_head.append("- " + facts_en_stmt(c, truth))
+    en_lines = list(en_head)
+    for name, items in en_groups:
+        if not items:
+            continue
+        en_lines += ["", "## " + name]
+        for p in items:
+            mdpath = p["path"].rstrip("/") + "/index.md"
+            is_rule = p["path"].startswith("/en/rules/") and p["path"] != "/en/rules/"
+            desc = "" if is_rule else ": " + R.trim(p["desc"], 30)
+            en_lines.append("- [%s](%s)%s" % (p["title"].split(" · ")[0],
+                                              C.abs_url(mdpath), desc))
+        if name == "Rules":
+            n = len([x for x in pages if x["path"].startswith("/en/rules/")
+                     and x["path"] != "/en/rules/"])
+            en_lines.append("- %d single-rule pages, IDs from SEC-01 to SLOP-01, "
+                            "one page each at /en/rules/<lowercase id>/. The full "
+                            "table is in the rule index above, and every page body "
+                            "is in the full-text collection." % n)
+    en_lines += ["", "## Chinese mirror", "",
+                 "- The Chinese site is the primary. Its machine-readable entry "
+                 "point is /llms.txt. Every page here has a Chinese counterpart at "
+                 "the same path without the /en prefix."]
+    llms_en = "\n".join(en_lines) + "\n"
+
     full = ["# Antinel 监理 · 全文合集（llms-full）", "",
             "> 产品版本 %s ｜ 数据日期 %s" % (ver, truth["captured_at"][:10]),
             "> 许可：代码 %s ｜ 文字 %s ｜ 数据 %s"
@@ -1057,7 +2004,7 @@ def machine_layer(pages, truth, facts):
            "Preferred-Languages: zh, en\n"
            "Canonical: %s/.well-known/security.txt\n" % (C.SITE_URL + C.BASE_PATH))
     return {"llms": llms, "full": fulltxt, "robots": robots,
-            "sitemap": sitemap, "security": sec}
+            "sitemap": sitemap, "security": sec, "llms_en": llms_en}
 
 
 def write_all(pages, machine, truth, outdir):
@@ -1087,8 +2034,11 @@ def write_all(pages, machine, truth, outdir):
         with open(os.path.join(d, "index.md"), "w", encoding="utf-8", newline="\n") as f:
             f.write(p["md"])
 
-    for name, text in (("llms.txt", machine["llms"]), ("llms-full.txt", machine["full"]),
-                       ("robots.txt", machine["robots"]), ("sitemap.xml", machine["sitemap"])):
+    for name, text in (("llms.txt", machine["llms"]),
+                       ("llms-en.txt", machine["llms_en"]),
+                       ("llms-full.txt", machine["full"]),
+                       ("robots.txt", machine["robots"]),
+                       ("sitemap.xml", machine["sitemap"])):
         with open(os.path.join(outdir, name), "w", encoding="utf-8", newline="\n") as f:
             f.write(text)
 

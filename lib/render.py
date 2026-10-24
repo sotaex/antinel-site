@@ -35,15 +35,19 @@ def trim(s, n=118):
     return s if len(s) <= n else s[:n - 1] + "…"
 
 
-def cite_block(title, path, updated, version):
-    """页脚引用块：五要素齐全（J-12）。"""
+def cite_block(title, path, updated, version, lang="zh-CN"):
+    """页脚引用块：五要素齐全（J-12）。中英两份外壳文案在 lib/i18n.py。"""
+    from . import i18n
+    s = i18n.shell(lang)
     url = C.abs_url(path)
     return (
         '<div class="cite">\n'
-        '  <p class="cite-head">引用本页</p>\n'
-        '  <p>Antinel 监理项目组.《%s》. %s, 产品版本 %s, 数据日期 %s. %s.</p>\n'
-        '  <p>命名空间公钥指纹：%s（与 GitHub README 钉定一致）。</p>\n'
-        '</div>' % (esc(title), url, version, updated, C.LICENSE_TEXT, C.FINGERPRINT))
+        '  <p class="cite-head">%s</p>\n'
+        '  <p>%s</p>\n'
+        '  <p>%s</p>\n'
+        '</div>' % (esc(s["cite_head"]),
+                    esc(s["cite_body"] % (title, url, version, updated, C.LICENSE_TEXT)),
+                    esc(s["cite_key"] % C.FINGERPRINT)))
 
 
 def jsonld(obj):
@@ -66,7 +70,7 @@ def ld_software(version, desc):
     })
 
 
-def ld_article(headline, path, updated, about):
+def ld_article(headline, path, updated, about, lang="zh-CN"):
     return jsonld({
         "@context": "https://schema.org",
         "@type": "TechArticle",
@@ -75,7 +79,7 @@ def ld_article(headline, path, updated, about):
         "license": "https://creativecommons.org/licenses/by-sa/4.0/",
         "about": about,
         "url": C.abs_url(path),
-        "inLanguage": "zh-CN",
+        "inLanguage": lang,
         "isPartOf": {"@type": "WebSite", "name": "Antinel 监理", "url": C.abs_url("/")},
     })
 
@@ -103,34 +107,66 @@ def ld_dataset(name, version, path, desc):
     })
 
 
-def ld_webpage(path, title, desc):
+def ld_webpage(path, title, desc, lang="zh-CN"):
     return jsonld({
         "@context": "https://schema.org",
         "@type": "WebPage",
         "name": title,
         "description": desc,
         "url": C.abs_url(path),
-        "inLanguage": "zh-CN",
+        "inLanguage": lang,
         "isPartOf": {"@type": "WebSite", "name": "Antinel 监理", "url": C.abs_url("/")},
     })
 
 
 def page(*, path, title, description, content, updated, version,
-         jsonld_obj, lang="zh-CN", cite_title=None):
-    """组装整页 HTML。path 形如 /facts/ 或 /。"""
+         jsonld_obj, lang="zh-CN", cite_title=None, alt=None):
+    """组装整页 HTML。path 形如 /facts/ 或 /。
+
+    alt：另一语言的同题页地址，形如 {"zh-CN": "/", "en": "/en/"}。
+    给了就出 hreflang 双向链接（J-16 的机器可读部分）。
+    """
+    from . import i18n
     base = C.BASE_PATH
     md_url = C.abs_url(path.rstrip("/") + "/index.md") if path != "/" else C.abs_url("/index.md")
+    s = i18n.shell(lang)
+    nav = "\n".join('      <a href="%s%s">%s</a>' % (base, esc(href), esc(label))
+                    for href, label in s["nav"])
+    foot = " · ".join('<a href="%s%s">%s</a>' % (base, esc(href), esc(label))
+                      for href, label in s["footer_links"])
+    llms_url = C.abs_url("/llms-en.txt") if lang == i18n.EN else C.abs_url("/llms.txt")
+    alt = alt or {}
+    links = []
+    for code, key in (("zh-CN", "zh-CN"), ("en", "en")):
+        if code != lang and alt.get(key):
+            links.append('<link rel="alternate" hreflang="%s" href="%s">'
+                         % (code, C.abs_url(alt[key])))
     mapping = {
         "lang": lang,
         "title": esc(title),
         "description": esc(description),
         "canonical": C.abs_url(path),
+        "hreflang": "\n".join(links),
         "md_url": md_url,
-        "llms_url": C.abs_url("/llms.txt"),
+        "llms_url": llms_url,
         "jsonld": jsonld_obj,
         "css": (base or "") + "/assets/site.css",
         "base": base,
         "content": content,
-        "cite": cite_block(cite_title or title, path, updated, version),
+        "cite": cite_block(cite_title or title, path, updated, version, lang),
+        "og_site": esc(s["og_site"]),
+        "skip": esc(s["skip"]),
+        "home": "/en/" if lang == i18n.EN else "/",
+        "brand_sub": esc(s["brand_sub"]),
+        "nav": nav,
+        "nav_label": esc(s["nav_label"]),
+        "nav_open": esc(s["nav_open"]),
+        # 语言切换：一个胶囊，指向另一语言的同题页。
+        # /en/ 镜像已由 J-16 保证与中文页一一对应，所以这个链接不会是死链。
+        # 镜像没做完之前不要放开这一行——那会给出 64 个指向 404 的入口。
+        "langswitch": esc(s["langswitch"]),
+        "langswitch_href": s["langswitch_href"],
+        "langswitch_lang": i18n.ZH if lang == i18n.EN else i18n.EN,
+        "footer_links": foot + ' · <a href="%s">%s</a>' % (llms_url, esc(s["llms_label"])),
     }
     return fill(_tpl("base.html"), mapping)

@@ -85,6 +85,15 @@ header.site .wrap {
 }
 .brand-sub { color: var(--ink-3); font-weight: 500; font-size: 15px; }
 
+/* 语言切换：一个链接，不带下拉。中英镜像一一对应，没有第三种语言。 */
+.langswitch {
+  margin-left: 12px; color: var(--ink-2); text-decoration: none; font-size: 14px;
+  padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px;
+  white-space: nowrap; background: var(--surface);
+}
+.langswitch:hover { border-color: var(--accent); color: var(--accent-2); }
+.langswitch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 .mainnav { margin-left: auto; display: flex; gap: 2px; }
 .mainnav a {
   color: var(--ink-2); text-decoration: none; font-size: 15px;

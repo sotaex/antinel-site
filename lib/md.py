@@ -198,12 +198,15 @@ def render(text, start_level=2):
     return "\n".join(out)
 
 
-def explain_first(text, terms):
+def explain_first(text, terms, paren="（）"):
     """给术语的首次出现补一句人话解释。每个术语每页只解释一次。
 
     只动正文段落：标题、代码块、表格、引用块一律不碰——那里插解释会毁版式。
     解释文本本身不许含别的术语（lib/human.py 的 TERMS 已保证），
     所以按长度降序替换不会自我污染。
+
+    paren：括号样式。中文页用全角（），英文镜像页用半角 ()——
+    英文正文里塞全角括号，一眼就看出是机器拼的。
 
     为什么放在渲染层做，而不是手改 18 个文件：手改会漏，漏了不报错。
     """
@@ -234,7 +237,7 @@ def explain_first(text, terms):
             j = i + len(t)
             while j < len(ln) and ln[j] in "*_":   # 别把解释裹进加粗
                 j += 1
-            ln = ln[:j] + "（%s）" % terms[t] + ln[j:]
+            ln = ln[:j] + "%s%s%s" % (paren[0], terms[t], paren[1]) + ln[j:]
             seen.add(t)
         out.append(ln)
     return "\n".join(out)

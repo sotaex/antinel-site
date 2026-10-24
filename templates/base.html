@@ -6,13 +6,14 @@
 <title>{{title}}</title>
 <meta name="description" content="{{description}}">
 <link rel="canonical" href="{{canonical}}">
+{{hreflang}}
 <link rel="alternate" type="text/markdown" href="{{md_url}}">
 <link rel="describedby" href="{{llms_url}}">
 <meta property="og:title" content="{{title}}">
 <meta property="og:description" content="{{description}}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{{canonical}}">
-<meta property="og:site_name" content="Antinel 监理">
+<meta property="og:site_name" content="{{og_site}}">
 <meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0d1116" media="(prefers-color-scheme: dark)">
@@ -21,18 +22,15 @@
 <script type="application/ld+json">{{jsonld}}</script>
 </head>
 <body>
-<a class="skip" href="#main">跳到正文</a>
+<a class="skip" href="#main">{{skip}}</a>
 <header class="site">
   <div class="wrap">
-    <a class="brand" href="{{base}}/"><span class="mark" aria-hidden="true"></span>Antinel<span class="brand-sub">监理</span></a>
+    <a class="brand" href="{{base}}{{home}}"><span class="mark" aria-hidden="true"></span>Antinel<span class="brand-sub">{{brand_sub}}</span></a>
+    <a class="langswitch" href="{{base}}{{langswitch_href}}" hreflang="{{langswitch_lang}}">{{langswitch}}</a>
     <input type="checkbox" id="navtoggle" class="navtoggle" hidden>
-    <label for="navtoggle" class="navbtn" aria-label="打开导航"><span></span><span></span><span></span></label>
-    <nav class="mainnav" aria-label="主导航">
-      <a href="{{base}}/why/">这事跟我有关吗</a>
-      <a href="{{base}}/steward/">它是什么</a>
-      <a href="{{base}}/docs/install/">怎么装</a>
-      <a href="{{base}}/rules/">37 条规则</a>
-      <a href="{{base}}/facts/">证据</a>
+    <label for="navtoggle" class="navbtn" aria-label="{{nav_open}}"><span></span><span></span><span></span></label>
+    <nav class="mainnav" aria-label="{{nav_label}}">
+{{nav}}
     </nav>
   </div>
 </header>
@@ -42,7 +40,7 @@
 <footer class="site">
   <div class="wrap">
 {{cite}}
-    <p class="footer-links"><a href="{{base}}/sample/">一页纸样例</a> · <a href="{{base}}/docs/">文档</a> · <a href="{{base}}/datasets/">数据集</a> · <a href="{{base}}/changelog/">变更日志</a> · <a href="{{base}}/license/">许可与中立</a> · <a href="{{base}}/brand/">品牌与用词</a> · <a href="{{base}}/llms.txt">llms.txt</a></p>
+    <p class="footer-links">{{footer_links}}</p>
   </div>
 </footer>
 <script src="{{base}}/assets/copy.js" defer></script>

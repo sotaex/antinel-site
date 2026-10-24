@@ -145,9 +145,13 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
         % (len(h1), groups, len(links), len(dead), nbytes, ndeploy))
 
     # J-04 head 双链接 + .md 镜像
+    # 必须认准 markdown 镜像那条（type="text/markdown"）：英文镜像上线后每页 head
+    # 还多一条 hreflang 的 rel="alternate"，只查 "rel="alternate"" 会被语言链接
+    # 满足——镜像链接整条没了也看不见。那正是 N-03 要注入的缺陷。
     bad = []
     for p in pages:
-        if 'rel="alternate"' not in p["html"] or 'rel="describedby"' not in p["html"]:
+        if 'rel="alternate" type="text/markdown"' not in p["html"] \
+                or 'rel="describedby"' not in p["html"]:
             bad.append(p["path"] + "(缺link)")
         if not p["md"].strip():
             bad.append(p["path"] + "(缺md)")
@@ -234,23 +238,33 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
             bad.append(p["path"] + "(dateModified 非 ISO)")
     add("J-10", not bad, "异常 %d%s" % (len(bad), ("：" + "、".join(bad[:3])) if bad else ""))
 
-    # J-11 规则页 37 + 五要素
+    # J-11 规则页 37 + 五要素。中英两份规则页各查各的词：
+    # 英文页标签取真源自带英文，拿中文词查它等于永远绿——也等于永远没查。
     rp = [p for p in pages if p["path"].startswith("/rules/") and p["path"] != "/rules/"]
+    rp += [p for p in pages
+           if p["path"].startswith("/en/rules/") and p["path"] != "/en/rules/"]
     ids = [r["id"] for r in truth["rules"]]
     slugs = {p["path"].strip("/").split("/")[-1] for p in rp}
     miss = [i for i in ids if i.lower() not in slugs]
+    nzh = len([p for p in rp if p["lang"] != "en"])
+    nen = len([p for p in rp if p["lang"] == "en"])
     bad = []
     for p in rp:
         h = p["html"]
-        for need in ("类别", "级别", "触发情形", "处置建议"):
-            if need not in h:
-                bad.append(p["path"] + "缺" + need)
+        need = ("Category", "Severity", "When it fires", "What to do") \
+            if p["lang"] == "en" else ("类别", "级别", "触发情形", "处置建议")
+        for n in need:
+            if n not in h:
+                bad.append(p["path"] + "缺" + n)
         if not re.search(r"<h1>%s" % re.escape(p["path"].strip("/").split("/")[-1].upper()), h):
             bad.append(p["path"] + "缺编号")
-    add("J-11", len(rp) == len(ids) and not miss and not bad,
-        "规则页 %d／真源 %d，缺 %d，要素缺 %d" % (len(rp), len(ids), len(miss), len(bad)))
+    add("J-11", nzh == len(ids) and nen == len(ids) and not miss and not bad,
+        "规则页 中 %d／英 %d／真源 %d，缺 %d，要素缺 %d"
+        % (nzh, nen, len(ids), len(miss), len(bad)))
 
-    # J-12 引用块五要素
+    # J-12 引用块五要素。中英两份外壳各查各的词：
+    # 中文页查「产品版本／数据日期」，英文镜像页查 "product version" / "data date"。
+    # 英文页若还按中文查，引用块永远缺两项——那不是产品坏了，是量具只认一种语言。
     bad = []
     for p in pages:
         h = p["html"]
@@ -259,9 +273,12 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
             bad.append(p["path"] + "(无引用块)")
             continue
         c = m.group(1)
-        for need in (C.FINGERPRINT, C.LICENSE_TEXT, "产品版本", "数据日期", C.SITE_URL):
-            if need not in c:
-                bad.append("%s 缺 %s" % (p["path"], need[:12]))
+        need = ((C.FINGERPRINT, C.LICENSE_TEXT, "product version", "data date", C.SITE_URL)
+                if p["lang"] == "en" else
+                (C.FINGERPRINT, C.LICENSE_TEXT, "产品版本", "数据日期", C.SITE_URL))
+        for x in need:
+            if x not in c:
+                bad.append("%s 缺 %s" % (p["path"], x[:12]))
     add("J-12", not bad, "异常 %d%s" % (len(bad), ("：" + "、".join(bad[:3])) if bad else ""))
 
     # J-13 数据集四件
@@ -275,7 +292,8 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
         % ("是" if ok13 else "否"))
 
     # J-14a 内部链接全部可达
-    known = set(paths) | {"/llms.txt", "/llms-full.txt", "/robots.txt", "/sitemap.xml",
+    known = set(paths) | {"/llms.txt", "/llms-full.txt", "/llms-en.txt",
+                          "/robots.txt", "/sitemap.xml",
                           "/404.html", "/.well-known/security.txt",
                           "/assets/site.css", "/assets/copy.js", "/assets/favicon.svg",
                           "/datasets/", "/datasets/rules@%s.json" % ver,
@@ -292,7 +310,23 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
             if q in known or q.rstrip("/") in known or q in known_slash:
                 continue
             dead.append("%s → %s" % (p["path"], href))
-    add("J-14a", not dead, "死链 %d%s" % (len(dead), ("：" + "；".join(dead[:3])) if dead else ""))
+
+    # J-14a 第二项：BASE_PATH 非空时，站内绝对链接必须带前缀。
+    # 为什么 _resolve() 抓不到这一项：它先把 BASE_PATH 剥掉再比对，
+    # 所以「漏了前缀」的链接在死链检查里看起来是好的——线上点下去全是 404，
+    # 判据全绿。2026-10-24 线上实测：/steward/ 页的「规则目录」指向
+    # https://sotaex.github.io/rules/，域名根下没有这个页面。
+    # 生成页的链接都走 base 前缀，会漏的只有手写内容里的那一种。
+    noprefix = []
+    if C.BASE_PATH:
+        for p in pages:
+            for href in re.findall(r'href="([^"]+)"', p["html"]):
+                if href.startswith("/") and not href.startswith("//") \
+                        and not href.startswith(C.BASE_PATH + "/"):
+                    noprefix.append("%s → %s" % (p["path"], href))
+    add("J-14a", not dead and not noprefix,
+        "死链 %d｜漏前缀 %d%s" % (len(dead), len(noprefix),
+                                ("：" + "；".join(noprefix[:3])) if noprefix else ""))
 
     # J-15 llms-full
     nbytes = len(machine["full"].encode("utf-8"))
@@ -401,13 +435,15 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
         add("J-24", False, "清单里的页不存在：%s" % "、".join(missing_human))
     else:
         # J-24 首段无术语。首段是唯一保证被读的一段，术语出现在这里，读者立刻掉队。
+        # 术语表按页的语言取：中文页查 TERMS，英文镜像页查 TERMS_EN。
+        # 英文页若不进这套判据，镜像页就可以随便堆术语——那正是镜像最容易烂的地方。
         bad = []
         for p in human:
             m = re.search(r'<p class="lead">(.*?)</p>', p["html"], re.S)
             if not m:
                 continue
             txt = _strip_tags(m.group(1))
-            hits = [t for t in H.TERMS if t in txt]
+            hits = [t for t in H.human_terms(p["lang"]) if t in txt]
             if hits:
                 bad.append("%s（%s）" % (p["path"], "、".join(hits)))
         add("J-24", not bad, "首段含术语的页 %d%s"
@@ -435,10 +471,14 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
             % (len(many), ("：" + "、".join(many[:4])) if many else ""))
 
         # J-27 边界段必有。只讲能做什么、不讲做不到什么，就不是监理。
+        # 关键词按页的语言取：中文查 EDGE_WORDS，英文镜像页查 EDGE_WORDS_EN。
+        # 比对前先把 h2 文本转小写：英文页写「Limits」而词表里是「limits」，
+        # 大小写敏感会让一条真的边界段因为首字母大写被判缺失——那是量具误报。
         noedge = []
         for p in human:
             hs = re.findall(r"<h2[^>]*>(.*?)</h2>", p["html"], re.S)
-            if not any(w in _strip_tags(h) for h in hs for w in H.EDGE_WORDS):
+            words = H.human_edge_words(p["lang"])
+            if not any(w in _strip_tags(h).lower() for h in hs for w in words):
                 noedge.append(p["path"])
         add("J-27", not noedge, "缺边界段的页 %d%s"
             % (len(noedge), ("：" + "、".join(noedge[:5])) if noedge else ""))
@@ -447,17 +487,22 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
         # 两处要让路，都是为了卡住「我们自己的话」而不是卡词面：
         #   1) 剥掉 <code>/<pre>：那里面是引述（品牌页列举我们不用哪些词）。
         #   2) 二级词（绝对／100%）往前看一小段，有否定词就算引述或否定。
+        # 词表按页的语言取：中文页查 BANNED，英文镜像页查 BANNED_EN。
         DENY = ("不", "非", "没", "无", "别", "禁止", "勿", "拒绝")
+        DENY_EN = ("not", "no ", "never", "cannot", "won't", "don't", "isn't",
+                   "aren't", "without")
         found = []
         for p in pages:
             txt = _strip_tags(re.sub(r"<(code|pre)[^>]*>.*?</\1>", "", p["html"], flags=re.S))
-            for w in H.BANNED:
+            banned, soft = H.human_banned(p["lang"])
+            deny = DENY_EN if p["lang"] == "en" else DENY
+            for w in banned:
                 if w in txt:
                     found.append("%s「%s」" % (p["path"], w))
-            for w in H.BANNED_SOFT:
+            for w in soft:
                 for m in re.finditer(re.escape(w), txt):
-                    ctx = txt[max(0, m.start() - 16):m.start()]
-                    if not any(d in ctx for d in DENY):
+                    ctx = txt[max(0, m.start() - 24):m.start()].lower()
+                    if not any(d in ctx for d in deny):
                         found.append("%s「%s」" % (p["path"], w))
                         break
         add("J-28", not found, "禁用词 %d 处%s"
@@ -477,20 +522,66 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
 
         # J-30 人读页之间不许有长句重复。同一句话在两页出现，说明有一页在复述，
         # 读者要读两遍。规则页的元数据表不算——那是模板产物，本来就该一样。
+        # 断句标点中英都收：。！？ 与 .!?。英文不按句号断，「It is what it is」
+        # 这类二十字母以上的重复就查不出来。
+        # 按语言分开比：这条判据防的是「一个读者在同一站里读到两遍」。
+        # 中文页和它的英文镜像都写着 `antinel host-shield status`，那是同一份
+        # 参考数据的两种语言，不是某一页在复述——没有读者会同时读两页。
+        # 跨语言比会把这种正常情况报成重复，判据就没人信了。
         seen = {}
         dup = []
         for p in human:
             m = re.search(r'<main id="main"[^>]*>(.*?)</main>', p["html"], re.S)
             txt = _strip_tags(m.group(1) if m else p["html"])
-            for s in re.split(r"[。！？\n]", txt):
+            for s in re.split(r"[。！？.!?\n]", txt):
                 s = re.sub(r"\s+", "", s)
                 if len(s) < 20:
                     continue
-                if s in seen and seen[s] != p["path"]:
-                    dup.append("%s＝%s" % (seen[s], p["path"]))
-                seen.setdefault(s, p["path"])
+                key = (p["lang"], s)
+                if key in seen and seen[key] != p["path"]:
+                    dup.append("%s＝%s" % (seen[key], p["path"]))
+                seen.setdefault(key, p["path"])
         add("J-30", not dup, "跨页重复长句 %d%s"
             % (len(dup), ("：" + "；".join(dup[:3])) if dup else ""))
+
+    # ---- J-16 英文镜像 ----
+    # 三条一起查，缺一条镜像就是坏的：
+    #   1. 一一对应：每个中文页都有一个 /en/ 同题页，反过来也一样。
+    #      多出来或漏掉都算——「多了」同样危险，那意味着有一页没人维护。
+    #   2. front-matter 的 lang 与路径一致。/en/ 下写 zh、中文页写 en，都算错。
+    #   3. 数字跨语言一致：英文页写 "37 shield rules"，中文页写「37 条规则」，
+    #      两边的 37 必须都等于真源。这条是镜像最容易静默错的地方——
+    #      翻译时把数改了，两边各自都「看起来对」。
+    zh_paths = {p["path"] for p in pages if p["lang"] != "en"}
+    en_paths = {p["path"] for p in pages if p["lang"] == "en"}
+    want_en = {("/en/" if p == "/" else "/en" + p) for p in zh_paths}
+    want_zh = {("/" if p == "/en/" else p[3:]) for p in en_paths}
+    only_zh = sorted(zh_paths - want_zh)
+    only_en = sorted(en_paths - want_en)
+    badlang = [p["path"] for p in pages
+               if (p["path"].startswith("/en/")) != (p["lang"] == "en")]
+
+    # 数字一致性：中文查「N 条规则／N 类宿主／N 道门」，英文查英文说法。
+    # 正则各自写，但**要拿的真值同一个**（facts 里的 value），不另算一遍。
+    rv = {c["id"]: c["value"] for c in facts}
+    numbad = []
+    for p in pages:
+        txt = _strip_tags(p["html"])
+        pats = ([(r"(\d+)\s*条(?:护盾)?规则", rv["F-001"]["rules"]),
+                 (r"(\d+)\s*类(?:AI\s*工具)?宿主", rv["F-003"]["hosts"]),
+                 (r"(\d+)\s*道(?:审查门|闸门|门)", rv["F-001"]["gates"])]
+                if p["lang"] != "en" else
+                [(r"(\d+)\s*shield rules", rv["F-001"]["rules"]),
+                 (r"(\d+)\s*kinds of AI tool hosts", rv["F-003"]["hosts"]),
+                 (r"(\d+)\s*review gates", rv["F-001"]["gates"])])
+        for pat, want in pats:
+            for m in re.finditer(pat, txt):
+                if int(m.group(1)) != want:
+                    numbad.append("%s 「%s」≠%d" % (p["path"], m.group(0), want))
+    add("J-16", not (only_zh or only_en or badlang or numbad),
+        "镜像 中 %d／英 %d｜缺对应 中 %d 英 %d｜lang 错 %d｜数字跨语言冲突 %d"
+        % (len(zh_paths), len(en_paths), len(only_zh), len(only_en),
+           len(badlang), len(numbad)))
 
 
     failed = [r for r in results if not r["ok"]]
