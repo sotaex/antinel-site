@@ -976,8 +976,9 @@ def machine_layer(pages, truth, facts):
     groups = [
         ("Start", [p for p in pages if p["path"] in ("/why/", "/sample/")]),
         ("Facts", [p for p in pages if p["path"] == "/facts/"]),
-        ("Rules", [p for p in pages if p["path"] == "/rules/"] +
-         [p for p in pages if p["path"].startswith("/rules/") and p["path"] != "/rules/"]),
+        # 规则单页 37 条不逐条列：llms.txt 要小（部署后带前缀，8KB 是硬线）。
+        # 全表在 /rules/ 目录页，llms-full.txt 里有每一页正文，AI 不会漏。
+        ("Rules", [p for p in pages if p["path"] == "/rules/"]),
         ("Docs", [p for p in pages if p["path"].startswith("/docs/")]),
         ("Concepts", [p for p in pages if p["path"] in
                       ("/steward/", "/gates/", "/verdicts/", "/monitor/", "/checkup/",
@@ -1009,6 +1010,12 @@ def machine_layer(pages, truth, facts):
             desc = "" if is_rule else ": " + R.trim(p["desc"], 30)
             lines.append("- [%s](%s)%s" % (p["title"].split(" · ")[0],
                                            C.abs_url(mdpath), desc))
+        if name == "Rules":
+            n = len([x for x in pages
+                     if x["path"].startswith("/rules/") and x["path"] != "/rules/"])
+            lines.append("- 规则单页 %d 条，编号从 SEC-01 到 SLOP-01，"
+                         "每条一个页面，路径 /rules/<编号小写>/。全表在上面的规则目录里，"
+                         "全文合集里也有每一页正文。" % n)
     llms = "\n".join(lines) + "\n"
 
     full = ["# Antinel 监理 · 全文合集（llms-full）", "",

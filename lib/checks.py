@@ -135,9 +135,14 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
             dead.append(u)
     groups = len(re.findall(r"^## ", L, re.M))
     nbytes = len(L.encode("utf-8"))
+    # 按「部署后的大小」算。本地 BASE_PATH 为空时链接短，部署到项目页每条会多
+    # /antinel-site 这 13 个字符。拿本地数判，会在本地绿、在 CI 红（2026-10-24 踩过）。
+    pre = "" if C.BASE_PATH else "/antinel-site"
+    ndeploy = nbytes + len(links) * len(pre.encode("utf-8"))
     add("J-03", len(h1) == 1 and 0 <= first_bq < first_h2 and groups >= 6
-        and len(links) >= 30 and not dead and nbytes <= 8192,
-        "H1=%d 组=%d 链接=%d 死链=%d 字节=%d" % (len(h1), groups, len(links), len(dead), nbytes))
+        and len(links) >= 20 and not dead and ndeploy <= 8192,
+        "H1=%d 组=%d 链接=%d 死链=%d 字节=%d（部署后 %d）"
+        % (len(h1), groups, len(links), len(dead), nbytes, ndeploy))
 
     # J-04 head 双链接 + .md 镜像
     bad = []
