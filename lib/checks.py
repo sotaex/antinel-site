@@ -296,6 +296,7 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
                           "/robots.txt", "/sitemap.xml",
                           "/404.html", "/.well-known/security.txt",
                           "/assets/site.css", "/assets/copy.js", "/assets/favicon.svg",
+                          "/assets/og-cover.png",
                           "/datasets/", "/datasets/rules@%s.json" % ver,
                           "/datasets/facts.json", "/datasets/hosts@%s.json" % ver,
                           "/datasets/verdicts.json"}
@@ -324,9 +325,28 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
                 if href.startswith("/") and not href.startswith("//") \
                         and not href.startswith(C.BASE_PATH + "/"):
                     noprefix.append("%s → %s" % (p["path"], href))
-    add("J-14a", not dead and not noprefix,
-        "死链 %d｜漏前缀 %d%s" % (len(dead), len(noprefix),
-                                ("：" + "；".join(noprefix[:3])) if noprefix else ""))
+
+    # J-14a 第三项：og:image（社交分享预览图）必须在、地址必须对。
+    # 为什么前两项抓不到它：og:image 是 http(s) 绝对地址，_resolve() 对
+    # 绝对地址返回 None，死链扫描从来不覆盖 meta；「漏前缀」项只看 href。
+    # 图掉了，分享出去只剩一句标题，而全站判据全绿——正是静默缺陷的形状。
+    # 图的数字写在像素里，J-06/J-17 扫的是 HTML 文本，也覆盖不到（见
+    # tools/make_og.py 的「已知局限」），所以这里至少守住「图还在、地址没改」。
+    og_bad = []
+    og_want = C.abs_url("/assets/og-cover.png")
+    for p in pages:
+        m = re.search(r'<meta property="og:image" content="([^"]+)"', p["html"])
+        if not m:
+            og_bad.append(p["path"] + "(缺og:image)")
+        elif m.group(1) != og_want:
+            og_bad.append("%s(地址不符:%s)" % (p["path"], m.group(1)))
+    if not os.path.isfile(os.path.join(C.DIR_ASSETS, "og-cover.png")):
+        og_bad.append("assets/og-cover.png 不在源目录（产物里必然也没有）")
+
+    add("J-14a", not dead and not noprefix and not og_bad,
+        "死链 %d｜漏前缀 %d｜og:image 异常 %d%s"
+        % (len(dead), len(noprefix), len(og_bad),
+           ("：" + "；".join(og_bad[:3])) if og_bad else ""))
 
     # J-15 llms-full
     nbytes = len(machine["full"].encode("utf-8"))
