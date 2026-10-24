@@ -83,4 +83,5 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: 线上审核（拿发布结果当对象，逐页量）
+        timeout-minutes: 12
         run: python tests/live_audit.py "${{ steps.deployment.outputs.page_url }}"

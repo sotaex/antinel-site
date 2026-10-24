@@ -31,19 +31,64 @@ CTX.verify_mode = ssl.CERT_NONE
 UA = "AntinelSiteAudit/1.0 (+https://sotaex.github.io/antinel-site/)"
 
 
-def get(url, timeout=30):
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout, context=CTX) as r:
-            return r.status, r.read(), r.geturl()
-    except urllib.error.HTTPError as e:
-        return e.code, e.read() or b"", url      # 404 也要拿正文：404 页本身是被审对象
-    except Exception as e:
-        return 0, str(e).encode(), url
+def get(url, timeout=30, retries=3):
+    """取一个地址。网络瞬断要重试——把「连不上」记成「页面坏了」是量具在说谎。
+
+    返回 (status, body, final_url)。status=0 表示三次都没连上，
+    调用方要把它记成「受阻」，不能记成「失败」（受阻≠失败）。
+    """
+    import time
+    last = ""
+    for i in range(retries):
+        req = urllib.request.Request(url, headers={"User-Agent": UA})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout, context=CTX) as r:
+                return r.status, r.read(), r.geturl()
+        except urllib.error.HTTPError as e:
+            return e.code, e.read() or b"", url   # 404 也要拿正文：404 页本身是被审对象
+        except Exception as e:
+            last = "%s: %s" % (type(e).__name__, e)
+            if i < retries - 1:
+                time.sleep(2)
+    return 0, last.encode(), url
+
+
+def wait_live(expect_pages=None, tries=10, gap=15):
+    """发布后 CDN 要几十秒才生效。等线上 sitemap 的条数和本次构建一致，再开始审。
+
+    为什么不只等「首页 200」：上一版的首页也是 200。等错了对象，量到的还是旧站，
+    报出来的 404 不是缺陷，是没等——跟「查不出来≠查出来是好的」是同一类错。
+
+    等不到也不改判据，照实审、照实报。
+    """
+    import time
+    for i in range(tries):
+        st, body, _ = get(SITE + "/sitemap.xml", timeout=15)
+        if st == 200:
+            n = len(re.findall(r"<loc>", body.decode("utf-8", "replace")))
+            if expect_pages is None or n == expect_pages:
+                if i:
+                    print("等 CDN 生效：第 %d 次探测，sitemap %d 条，与本次构建一致\n"
+                          % (i + 1, n))
+                return True
+        if i < tries - 1:
+            time.sleep(gap)
+    print("等 CDN 生效：%d 次探测（每次隔 %d 秒）后仍未对上——照实审，不跳过\n"
+          % (tries, gap))
+    return False
 
 
 def main():
     fails = []
+
+    # 本次构建的页数：从本地产物读。CI 里产物就在，本地跑也一致。
+    import os
+    local_sm = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "site-output", "sitemap.xml")
+    expect = None
+    if os.path.isfile(local_sm):
+        expect = len(re.findall(r"<loc>", open(local_sm, encoding="utf-8").read()))
+    wait_live(expect)
 
     st, body, _ = get(SITE + "/sitemap.xml")
     if st != 200:
@@ -60,10 +105,15 @@ def main():
         rows = list(ex.map(one, urls))
 
     total = 0
-    bad_status, bad_head, bad_h1, bad_md = [], [], [], []
+    bad_status, blocked, bad_head, bad_h1, bad_md = [], [], [], [], []
     for u, st, b, _final in rows:
         total += len(b)
         path = u.replace(SITE, "") or "/"
+        if st == 0:
+            # 连不上：记「受阻」，不记「失败」。两者的区别是「站点坏了」还是「我没连上」，
+            # 只有后者能重跑解决。合并成一句「页面坏了」就是诬告。
+            blocked.append("%s（%s）" % (path, b.decode("utf-8", "replace")[:60]))
+            continue
         if st != 200:
             bad_status.append("%s(%s)" % (path, st))
             continue
@@ -122,7 +172,8 @@ def main():
     st, b, _ = get(SITE + "/no-such-page-xyz/")
     nf = b.decode("utf-8", "replace")
 
-    print("L-01 sitemap 页面全 200 ｜ 坏 %d %s" % (len(bad_status), bad_status[:3]))
+    print("L-01 sitemap 页面全 200 ｜ 坏 %d %s｜ 受阻 %d %s"
+          % (len(bad_status), bad_status[:3], len(blocked), blocked[:2]))
     print("L-02 title/description/canonical ｜ 坏 %d %s" % (len(bad_head), bad_head[:3]))
     print("L-03 唯一 h1 + lang ｜ 坏 %d %s" % (len(bad_h1), bad_h1[:3]))
     print("L-04 .md 镜像可达 ｜ 坏 %d %s" % (len(bad_md), bad_md[:3]))
@@ -137,8 +188,15 @@ def main():
           % (len(rows[0][2]) / 1024.0, total / 1024.0))
 
     ok = (not bad_status and not bad_head and not bad_h1 and not bad_md
-          and not llms_bad and st == 404 and not fails and ver_ok)
-    print("\n线上审核：%s" % ("全绿" if ok else "有问题，见上"))
+          and not llms_bad and st == 404 and not fails and ver_ok and not blocked)
+    # 受阻不算失败，但也不算全绿——「没查成」不能冒充「查了没事」。
+    if ok:
+        verdict = "全绿"
+    elif blocked and not (bad_status or bad_head or bad_h1 or bad_md or llms_bad or fails):
+        verdict = "受阻 %d 项，结论不完整（重跑即可，不是站点缺陷）" % len(blocked)
+    else:
+        verdict = "有问题，见上"
+    print("\n线上审核：%s" % verdict)
     return 0 if ok else 1
 
 
