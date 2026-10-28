@@ -31,6 +31,15 @@ def _strip_tags(h):
     return re.sub(r"<[^>]+>", "", h)
 
 
+#: 版本号形状。**不许再写成 `0\.5\d\.\d`** —— 那样只认某一族，产品一换族
+#: 判据就静默失明（2026-10-29 实测：产品到 0.60 后，注入 0.60.1 与 0.61.0
+#: 都报「异版本 0 处」）。前后加保护，避免把 127.0.0.1 里的 `0.0.1` 当成版本。
+_VER_RX = re.compile(r"(?<![\d.])0\.\d+\.\d+(?![\d.])")
+#: 代码示例不是产品版本声明（`hook_protocol_version` 就是另一套版本号）。
+_CODE_HTML = re.compile(r"<(code|pre)[^>]*>.*?</\1>", re.S)
+_CODE_MD = re.compile(r"^[ \t]*```.*?^[ \t]*```", re.S | re.M)
+
+
 def _h1s(h):
     return re.findall(r"<h1[^>]*>(.*?)</h1>", h, re.S)
 
@@ -356,15 +365,26 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
         "%d KB｜段 %d／页 %d｜头部说明 %d 行" % (nbytes // 1024, secs, len(pages), head6))
 
     # J-17 版本同源
+    # ★★ 2026-10-29 修：原来写死 `0\.5\d\.\d`，只认 0.5x 这一族。产品走到
+    #   0.60 之后，这条判据对**当前版本族完全失明** —— 把 0.60.1 写进正文，
+    #   它照样报「异版本 0 处」（负控 N-15 喂的恰好是老族的 0.55.2，所以一直绿）。
+    #   放宽成任意 0.x.y，并放行两类**合法的**旧版本号：
+    #     ① 规则页上的出处记录（「0.29.0 G-8：新增…」）—— 这些串本来就写在
+    #        真源快照里，按「快照里有没有出处」放行，不手维护白名单；
+    #     ② 代码示例里的另一套版本号（`hook_protocol_version`）—— 扫之前先剥掉。
+    prov = set(_VER_RX.findall(json.dumps(truth, ensure_ascii=False)))
     bad = []
     for p in pages:
-        for m in re.finditer(r"0\.5\d\.\d", _strip_tags(p["html"])):
-            if m.group(0) != ver:
+        txt = _strip_tags(_CODE_HTML.sub("", p["html"]))
+        for m in _VER_RX.finditer(txt):
+            if m.group(0) != ver and m.group(0) not in prov:
                 bad.append("%s:%s" % (p["path"], m.group(0)))
-    for m in re.finditer(r"0\.5\d\.\d", machine["llms"] + machine["full"]):
-        if m.group(0) != ver:
+    machine_txt = _CODE_MD.sub("", machine["llms"] + machine["full"])
+    for m in _VER_RX.finditer(machine_txt):
+        if m.group(0) != ver and m.group(0) not in prov:
             bad.append("机读层:%s" % m.group(0))
-    add("J-17", not bad, "异版本 %d 处%s" % (len(bad), ("：" + "、".join(bad[:3])) if bad else ""))
+    add("J-17", not bad, "异版本 %d 处（放行快照内出处 %d 个）%s"
+        % (len(bad), len(prov), ("：" + "、".join(bad[:3])) if bad else ""))
 
     # J-18 自证数字同源：从 raw 原文重新解析，与结构化字段对照。
     # （旧版拿 assertions 比 assertions_total，两个值同源，永远绿 —— 假守卫。）

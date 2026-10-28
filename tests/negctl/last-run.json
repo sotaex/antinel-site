@@ -1,8 +1,8 @@
 {
   "schema": "antinel-site-negctl/1",
-  "ran": 31,
-  "total": 31,
-  "pass": 31,
+  "ran": 32,
+  "total": 32,
+  "pass": 32,
   "baseline_criteria": 30,
   "note": "每条三步：基线全绿 → 注入后目标判据变红 → 还原后全绿",
   "details": [
@@ -144,7 +144,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "241 KB｜段 127／页 128｜头部说明 6 行"
+      "detail": "246 KB｜段 127／页 128｜头部说明 6 行"
     },
     {
       "id": "N-15",
@@ -154,7 +154,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异版本 2 处：/brand/:0.55.2、机读层:0.55.2"
+      "detail": "异版本 2 处（放行快照内出处 5 个）：/brand/:0.55.2、机读层:0.55.2"
     },
     {
       "id": "N-16",
@@ -164,7 +164,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "原文解析 323 断言／21 摘要；快照 999／21；F-007 999／21"
+      "detail": "原文解析 325 断言／21 摘要；快照 999／21；F-007 999／21"
     },
     {
       "id": "N-17",
@@ -194,7 +194,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "锁 aa6115f84cc9… ｜ 待发布 63b349d5733c…"
+      "detail": "锁 18ac9885db19… ｜ 待发布 c65ca397df37…"
     },
     {
       "id": "N-20",
@@ -315,6 +315,16 @@
       "red_ok": true,
       "restore_ok": true,
       "detail": "死链 0｜漏前缀 0｜og:image 异常 1：assets/og-cover.png 不在源目录（产物里必然也没有）"
+    },
+    {
+      "id": "N-32",
+      "criterion": "J-17",
+      "desc": "正文写死当前族的旧版本号（0.60.1）",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "异版本 2 处（放行快照内出处 5 个）：/brand/:0.60.1、机读层:0.60.1"
     }
   ]
 }
