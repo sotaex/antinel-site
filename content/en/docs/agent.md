@@ -43,7 +43,7 @@ One JSON gets you: whether it is installed, which host, and what to type next. R
   "platform": "win32",
   "project_root": "<project root>",
   "installed": true,
-  "hook_protocol_version": "0.33.1",
+  "hook_protocol_version": "{{product_version}}",
   "host_detected": "workbuddy",
   "audit_dir": "<project root>\\.psl\\audit",
   "skill_md": "<project root>\\SKILL.md",

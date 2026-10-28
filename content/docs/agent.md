@@ -43,7 +43,7 @@ antinel agent --json
   "platform": "win32",
   "project_root": "<项目根>",
   "installed": true,
-  "hook_protocol_version": "0.33.1",
+  "hook_protocol_version": "{{product_version}}",
   "host_detected": "workbuddy",
   "audit_dir": "<项目根>\\.psl\\audit",
   "skill_md": "<项目根>\\SKILL.md",
