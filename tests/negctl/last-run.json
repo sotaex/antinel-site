@@ -1,8 +1,8 @@
 {
   "schema": "antinel-site-negctl/1",
-  "ran": 32,
-  "total": 32,
-  "pass": 32,
+  "ran": 35,
+  "total": 35,
+  "pass": 35,
   "baseline_criteria": 30,
   "note": "每条三步：基线全绿 → 注入后目标判据变红 → 还原后全绿",
   "details": [
@@ -144,7 +144,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "246 KB｜段 127／页 128｜头部说明 6 行"
+      "detail": "249 KB｜段 127／页 128｜头部说明 6 行"
     },
     {
       "id": "N-15",
@@ -325,6 +325,36 @@
       "red_ok": true,
       "restore_ok": true,
       "detail": "异版本 2 处（放行快照内出处 5 个）：/brand/:0.60.1、机读层:0.60.1"
+    },
+    {
+      "id": "N-33",
+      "criterion": "J-17",
+      "desc": "代码示例里写死旧版本号（0.60.1）",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "异版本 2 处（放行快照内出处 5 个）：/docs/agent/:0.60.1、机读层:0.60.1"
+    },
+    {
+      "id": "N-34",
+      "criterion": "J-17",
+      "desc": "英文正文句末写死旧版本号（0.60.1.）",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "异版本 2 处（放行快照内出处 5 个）：/en/license/:0.60.1、机读层:0.60.1"
+    },
+    {
+      "id": "N-35",
+      "criterion": "J-01",
+      "desc": "真源快照的规则被清空（计数自检要红）",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "页 54／事实 12／规则 0／llms 2647 字节"
     }
   ]
 }

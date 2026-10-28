@@ -43,7 +43,7 @@ One JSON gets you: whether it is installed, which host, and what to type next. R
   "platform": "win32",
   "project_root": "<project root>",
   "installed": true,
-  "hook_protocol_version": "{{product_version}}",
+  "hook_protocol_version": "<the value recorded at install>",
   "host_detected": "workbuddy",
   "audit_dir": "<project root>\\.psl\\audit",
   "skill_md": "<project root>\\SKILL.md",
@@ -74,6 +74,7 @@ One JSON gets you: whether it is installed, which host, and what to type next. R
 |---|---|---|
 | `product` / `pypi_package` | product name / package name | the package is `antinel`, **not** `antinel-security` |
 | `package_version` | the current package version | report this one. Do not guess |
+| `hook_protocol_version` | the value written into `.psl/manifest.json` at install | a different number from `package_version`, and not guaranteed to match it; use this one to report which version the hook is registered at |
 | `installed` | whether the checkpoint is installed | `true` and only `true` counts as installed |
 | `host_detected` | the host that was identified | compare with `--host`. If they disagree, report the host explicitly |
 | `project_root` / `audit_dir` | project root / where the audit chain is | confirm the path before reading the audit |

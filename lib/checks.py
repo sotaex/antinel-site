@@ -34,8 +34,17 @@ def _strip_tags(h):
 #: 版本号形状。**不许再写成 `0\.5\d\.\d`** —— 那样只认某一族，产品一换族
 #: 判据就静默失明（2026-10-29 实测：产品到 0.60 后，注入 0.60.1 与 0.61.0
 #: 都报「异版本 0 处」）。前后加保护，避免把 127.0.0.1 里的 `0.0.1` 当成版本。
-_VER_RX = re.compile(r"(?<![\d.])0\.\d+\.\d+(?![\d.])")
-#: 代码示例不是产品版本声明（`hook_protocol_version` 就是另一套版本号）。
+#: 收尾用 `(?!\.?\d)` 而不是 `(?![\d.])`：后者把**句末带句点**的写法也挡掉了，
+#: 英文正文「shipped in 0.60.1.」永远匹配不到（2026-10-29 实测）。现在的写法
+#: 仍挡得住更长的版本（0.60.12、0.60.1.2），但放过句号。
+_VER_RX = re.compile(r"(?<![\d.])0\.\d+\.\d+(?!\.?\d)")
+#: ★ 2026-10-29 起，J-17 **不再**用这两个正则剥代码块——代码块要一起扫。
+#:   上一版注释写着「代码示例不是产品版本声明」，于是 `docs/agent.md` 里
+#:   `"hook_protocol_version": "0.33.1"` 这种写死在示例里的版本号烂了两个月，
+#:   30 条判据全绿。示例也是承诺：读者照着抄，抄到的就是一个不存在的数。
+#:   要写别的版本号，用占位符（`<…>`）或写进真源快照。
+#:   保留这两个正则，是给将来「把示例里的命令单独取出来」这类判据用的；
+#:   谁用谁负责说清口径，别再拿它把版本面整段排除在外。
 _CODE_HTML = re.compile(r"<(code|pre)[^>]*>.*?</\1>", re.S)
 _CODE_MD = re.compile(r"^[ \t]*```.*?^[ \t]*```", re.S | re.M)
 
@@ -365,21 +374,28 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
         "%d KB｜段 %d／页 %d｜头部说明 %d 行" % (nbytes // 1024, secs, len(pages), head6))
 
     # J-17 版本同源
-    # ★★ 2026-10-29 修：原来写死 `0\.5\d\.\d`，只认 0.5x 这一族。产品走到
-    #   0.60 之后，这条判据对**当前版本族完全失明** —— 把 0.60.1 写进正文，
-    #   它照样报「异版本 0 处」（负控 N-15 喂的恰好是老族的 0.55.2，所以一直绿）。
-    #   放宽成任意 0.x.y，并放行两类**合法的**旧版本号：
+    # ★★ 2026-10-29 修了两次，两次都是「看着绿、其实看不见」：
+    #   ① 版本族失明：原来写死 `0\.5\d\.\d`，只认 0.5x 这一族。产品走到 0.60
+    #      之后，把 0.60.1 写进正文它照样报「异版本 0 处」（负控 N-15 喂的恰好
+    #      是老族的 0.55.2，所以一直绿）。现放宽成任意 0.x.y（N-32 钉住）。
+    #   ② 代码块失明：原来扫之前先把 <code>/<pre> 与 ``` 围栏整段剥掉，于是
+    #      `docs/agent.md` 里 `"hook_protocol_version": "0.33.1"` 烂了两个月，
+    #      全站判据照样绿——正因为它是写在示例里的。示例也是承诺。现连代码块
+    #      一起扫（N-33 钉住）。
+    #   ③ 句末失明：正则收尾原来是 `(?![\d.])`，英文正文「… in 0.60.1.」的
+    #      版本号后面跟句号，永远匹配不到。现改 `(?!\.?\d)`（N-34 钉住）。
+    #   仍然放行两类合法旧版本号：
     #     ① 规则页上的出处记录（「0.29.0 G-8：新增…」）—— 这些串本来就写在
     #        真源快照里，按「快照里有没有出处」放行，不手维护白名单；
-    #     ② 代码示例里的另一套版本号（`hook_protocol_version`）—— 扫之前先剥掉。
+    #     ② 快照自带的当前版本（prov 天然含它，与 ver 判定等价，留作兜底）。
     prov = set(_VER_RX.findall(json.dumps(truth, ensure_ascii=False)))
     bad = []
     for p in pages:
-        txt = _strip_tags(_CODE_HTML.sub("", p["html"]))
+        txt = _strip_tags(p["html"])
         for m in _VER_RX.finditer(txt):
             if m.group(0) != ver and m.group(0) not in prov:
                 bad.append("%s:%s" % (p["path"], m.group(0)))
-    machine_txt = _CODE_MD.sub("", machine["llms"] + machine["full"])
+    machine_txt = machine["llms"] + machine["full"]
     for m in _VER_RX.finditer(machine_txt):
         if m.group(0) != ver and m.group(0) not in prov:
             bad.append("机读层:%s" % m.group(0))

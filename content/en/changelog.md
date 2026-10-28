@@ -33,17 +33,17 @@ The version number appears in that one place only. Each entry below records what
 
 | Item | Previous sync | This one |
 |---|---|---|
-| Assertion count | 323 | {{facts.F-007.value.assertions}} |
-| Rule count | 37 rules | {{facts.F-001.value.rules}} rules (unchanged) |
-| Category count | 8 categories | {{facts.F-001.value.categories}} categories (unchanged) |
-| Severity split | 21 blocking／16 warning | {{facts.F-002.value.critical}} blocking／{{facts.F-002.value.warning}} warning (unchanged) |
-| Host count | 24 kinds | {{facts.F-003.value.hosts}} kinds (unchanged) |
+| Assertion count | 323 | 325 |
+| Rule count | 37 rules | 37 rules (unchanged) |
+| Category count | 8 categories | 8 categories (unchanged) |
+| Severity split | 21 blocking／16 warning | 21 blocking／16 warning (unchanged) |
+| Host count | 24 kinds | 24 kinds (unchanged) |
 
-The counts did not move, but **what they watch did**: 11 of them had their matching conditions revised, concentrated in secret reads, environment probing and destructive actions. Which files, which commands and which content features each one now watches is stated on [the rule index](/en/rules/) — it is not copied here, because two copies drift.
+The counts did not move, but **what they watch did**: compared with the previous sync, 11 of the 37 rules had their matching conditions revised — five in secret reads, three in destructive actions, and one each in context, injection and metadata. That is the net change between two syncs, not what any single release changed. Which files, which commands and which content features each one now watches is stated on [the rule index](/en/rules/) — it is not copied here, because two copies drift.
 
-**Pages that changed**: this page was rewritten. The dated entries used to carry a live placeholder that the build filled with the current version, so every sync rewrote the version number of the day the site went live — a record that edits itself. Dated entries now record what was true then and what changed relative to it. The current version sits in one place, above.
+**Pages that changed**: this page was rewritten. The dated entries used to carry a live placeholder that the build filled with the current version, so every sync rewrote the version number of the day the site went live — a record that edits itself. Dated entries now record what was true then and what changed relative to it. The current version sits in one place, above. One more fix: in the `antinel agent --json` example, the hook-registration version was hard-coded to a much older value; it is a placeholder now, and the field table states plainly that it is a different number from the package version and not guaranteed to match it.
 
-**Checks that changed**: the version-provenance check used to recognise only one shape of version number. Once the product moved to a new version family, the check could not see a wrong version from that family at all — writing the immediately preceding version into the text still produced "0 mismatched versions". It now accepts any version shape, and a counter-example holds it in place. Also recorded here: the build-time checks grew from 22 in the first release to 30. The additions in between were never logged on this page, which was an omission on our part.
+**Checks that changed**: the version-provenance check used to recognise only one shape of version number. Once the product moved to a new version family, the check could not see a wrong version from that family at all — writing the immediately preceding version into the text still produced "0 mismatched versions". It now accepts any version shape. While adding the counter-example, two siblings of the same defect surfaced: code samples were skipped wholesale, so an old version written inside an example (the one fixed just above) was never checked at all; and the pattern's tail also excluded a full stop, so the most natural English phrasing — a version at the end of a sentence — never matched. Both now have counter-examples, so this one check is held in place by three: body text, code block, sentence end. One last gap was closed too: of the 30 checks, only the input-count self-check had no counter-example; there are 35 counter-examples now, matching all 30 one by one. Also recorded here: the build-time checks grew from 21 in the first release to 30 — 22 the same day, 29 once the human layer was filled in, and 30 with the English mirror. The additions in between were never logged on this page, which was an omission on our part.
 
 ## 2026-10-24 · the site goes live
 
@@ -56,11 +56,11 @@ The numbers on launch day: 37 rules, 8 categories, 4 gates, 24 host kinds, 21 bl
 
 The assertion count had risen from 320 to 323 during an overnight product iteration, and the snapshot-and-lock mechanism on this site got verified once because of it: if the snapshot had not followed, the build would have failed on the spot rather than quietly publishing an old number.
 
-**Checks**: the first version established 22 build-time checks, covering page count, dead links, version provenance, gate-membership provenance, invisible characters and placeholder pages. Each one is paired with a counter-example — deliberately inject an error and that check must go red on the spot. Run it before and after the injection, to prove it is not a decoration that is always green.
+**Checks**: the first version established 21 build-time checks, covering page count, dead links, version provenance, gate-membership provenance, invisible characters and placeholder pages. Each one is paired with a counter-example — deliberately inject an error and that check must go red on the spot. Run it before and after the injection, to prove it is not a decoration that is always green.
 
-## How to look up an old version
+## How to fetch the datasets
 
-Dataset file names carry the version. Old versions are kept permanently and never overwritten:
+Dataset file names carry the version, which makes reconciliation easy:
 
 ```
 /datasets/rules@{{product_version}}.json
@@ -68,6 +68,8 @@ Dataset file names carry the version. Old versions are kept permanently and neve
 /datasets/facts.json
 /datasets/verdicts.json
 ```
+
+The version in a file name is the version that build read. The live site only carries the set produced by the current build — the previous version's address is overwritten, so download and keep it yourself if you need it (the licence allows that).
 
 The product's own change record is in the commit history of the `sotaex/agentstate` repository — that is the source of truth for the facts. This site is its readable presentation.
 

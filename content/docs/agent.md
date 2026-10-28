@@ -43,7 +43,7 @@ antinel agent --json
   "platform": "win32",
   "project_root": "<项目根>",
   "installed": true,
-  "hook_protocol_version": "{{product_version}}",
+  "hook_protocol_version": "<装的那一刻登记的数>",
   "host_detected": "workbuddy",
   "audit_dir": "<项目根>\\.psl\\audit",
   "skill_md": "<项目根>\\SKILL.md",
@@ -74,6 +74,7 @@ antinel agent --json
 |---|---|---|
 | `product`／`pypi_package` | 产品名／包名 | 包名是 `antinel`，**不是** `antinel-security` |
 | `package_version` | 当前包版本 | 报版本时报这个，别自己猜 |
+| `hook_protocol_version` | 装的那一刻登记进 `.psl/manifest.json` 的那个数 | 与 `package_version` 是两个数，不保证相等；要报「钩子登记的是哪一版」用这个 |
 | `installed` | 钩子装没装 | `true` 才算装好 |
 | `host_detected` | 识别出的宿主 | 与 `--host` 对照，不一致就显式报宿主 |
 | `project_root`／`audit_dir` | 项目根／审计链位置 | 读审计前先确认路径 |
