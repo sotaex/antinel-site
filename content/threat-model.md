@@ -51,7 +51,7 @@ audience: human
 |---|---|---|
 | 运行时联网 | {{facts.F-005.value.network}} | 一个要向云端汇报的监理，没法向本地业主负责 |
 | 依赖 | 纯标准库（{{facts.F-005.value.stdlib_only}}） | 不会被自己的依赖链带进新的供应链风险 |
-| 常驻进程 | {{facts.F-005.value.daemon}} | 不占后台，不偷偷跑，关机就没了 |
+| 常驻进程 | {{facts.F-005.value.daemon}} | 不占后台，不偷偷跑，关机就没了。开启宿主拦截（`antinel host-shield enable`）后会有一个：登录触发，只在本机跑，不联网 |
 | 单次钩子时延 | 约 {{facts.F-004.value.p50_ms}} ms | Windows 上解释器启动占主导；Linux／macOS 未测 |
 
 时延这一项只测了 Windows。写「未测」比写一个好看的数诚实。

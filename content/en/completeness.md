@@ -17,7 +17,7 @@ A list of threats never ends. Features are open-ended, and so are the ways to br
 
 But **carriers are a closed set**. The ways a process can fail are limited by the finite kinds of resource it can consume and depend on: time, disk, memory, permissions, input, locks, version, environment. Plus one thing that is not in the program but breaks systems just the same — people.
 
-So completeness can only be defined on the carrier dimension. Forty cells is not forty points. It is the fact that all eight directions were asked.
+So completeness can only be defined on the carrier dimension. Forty cells are not forty points. They record that all eight directions were asked.
 
 ## The five actions, one question each
 

@@ -198,7 +198,12 @@ def render(text, start_level=2):
     return "\n".join(out)
 
 
-def explain_first(text, terms, paren="（）"):
+def _dep(ln, i, op, cl):
+    """到位置 i 为止，左括号比右括号多几个（＞0 就是在括号里）。"""
+    return ln.count(op, 0, i) - ln.count(cl, 0, i)
+
+
+def explain_first(text, terms, paren="（）", lang="zh"):
     """给术语的首次出现补一句人话解释。每个术语每页只解释一次。
 
     只动正文段落：标题、代码块、表格、引用块一律不碰——那里插解释会毁版式。
@@ -229,14 +234,29 @@ def explain_first(text, terms, paren="（）"):
             if t in seen:
                 continue
             i = ln.find(t)
-            # 跳过已在括号里的出现：那里插解释会变成「（…（…）…）」双重括号
-            while i >= 0 and ln.count("（", 0, i) > ln.count("）", 0, i):
+            # 跳过已在括号里的出现：那里插解释会变成「（…（…）…）」双重括号。
+            # ★ 两种括号都要数。原来只数全角括号，英文页的 `(…)` 认不出来，
+            #   于是同一个词会被套第二层括号。
+            while i >= 0 and (_dep(ln, i, "（", "）") > 0
+                              or _dep(ln, i, "(", ")") > 0):
                 i = ln.find(t, i + len(t))
             if i < 0:
                 continue
             j = i + len(t)
             while j < len(ln) and ln[j] in "*_":   # 别把解释裹进加粗
                 j += 1
+            # ★ 英文词要越过词尾再插括号。不越过去，括号会把词切开：
+            #   `verdict` ＋ `(…检查得出的那个结论…)` ＋ `s`，
+            #   线上渲染成 "verdict(the one conclusion…)s"（2026-10-29 实测 /en/faq/）。
+            #   中文没有词尾变化，不受影响。
+            if lang == "en":
+                while j < len(ln) and (ln[j].islower() or ln[j] in "'’"):
+                    j += 1
+                # 英文括号前要留一个空格：`hosts(an AI tool…)` 是中文写法。
+                # 中文页不加，中文本来就不留。
+                if j > 0 and ln[j - 1] not in " \t":
+                    ln = ln[:j] + " " + ln[j:]
+                    j += 1
             ln = ln[:j] + "%s%s%s" % (paren[0], terms[t], paren[1]) + ln[j:]
             seen.add(t)
         out.append(ln)

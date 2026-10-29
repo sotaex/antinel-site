@@ -33,7 +33,7 @@ Neither one covers for the other. Antivirus cannot stop "the agent read your key
 
 ## Where the word comes from
 
-The Chinese word 监理 carries an institutional meaning. Information-systems supervision has a mature body of practice behind it (the kind of work the GB/T 19668 family of standards describes): **a third party, working to a contract and to written rules, answerable for the process rather than the outcome, producing records that can be checked**.
+The Chinese word 监理 carries an institutional meaning. Information-systems supervision has a mature body of practice behind it. It is the kind of work the GB/T 19668 family of standards describes. Four things define it: a third party, working to a contract and to written rules, answerable for the process rather than the outcome, producing records that can be checked.
 
 Antinel borrows that way of working. It does not borrow a qualification:
 
@@ -57,11 +57,11 @@ That is also why it has to **run locally and stay off the network at run time**:
 
 ## Three rules we hold to
 
-**One, it generates no content.** A steward does not change your code, does not write files for you, does not improve your project. It looks at actions.
+**First, it generates no content.** A steward does not change your code, does not write files for you, does not improve your project. It looks at actions.
 
-**Two, the bar is consistent.** The same call is blocked today and blocked tomorrow. The bar lives in the rules file, its version is checkable, and it does not change with the person.
+**Second, the bar is consistent.** The same call is blocked today and blocked tomorrow. The bar lives in the rules file, its version is checkable, and it does not change with the person.
 
-**Three, it is decoupled from payment.** The verdict does not depend on whether anyone paid. We take no "passage fee" and we sell no "verified" mark. A mark can only come out of a public rule judged by a machine.
+**Third, it is decoupled from payment.** The verdict does not depend on whether anyone paid. We take no "passage fee" and we sell no "verified" mark. A mark can only come out of a public rule judged by a machine.
 
 ## What it actually stops
 

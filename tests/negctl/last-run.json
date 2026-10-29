@@ -1,9 +1,9 @@
 {
   "schema": "antinel-site-negctl/1",
-  "ran": 35,
-  "total": 35,
-  "pass": 35,
-  "baseline_criteria": 30,
+  "ran": 38,
+  "total": 38,
+  "pass": 38,
+  "baseline_criteria": 33,
   "note": "每条三步：基线全绿 → 注入后目标判据变红 → 还原后全绿",
   "details": [
     {
@@ -24,7 +24,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "H1=1 组=0 链接=26 死链=0 字节=4494（部署后 4832）"
+      "detail": "H1=1 组=0 链接=26 死链=0 字节=4509（部署后 4847）"
     },
     {
       "id": "N-03",
@@ -144,7 +144,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "249 KB｜段 127／页 128｜头部说明 6 行"
+      "detail": "253 KB｜段 127／页 128｜头部说明 6 行"
     },
     {
       "id": "N-15",
@@ -354,7 +354,37 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "页 54／事实 12／规则 0／llms 2647 字节"
+      "detail": "页 54／事实 12／规则 0／llms 2652 字节"
+    },
+    {
+      "id": "N-36",
+      "criterion": "J-31",
+      "desc": "中文正文写一句 80 字的长句",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "超长句 1 处（上限 中文 70 字／英文 35 词）：/faq/（80）"
+    },
+    {
+      "id": "N-37",
+      "criterion": "J-32",
+      "desc": "中文正文写一句六十几个字的话（只该红存量那条）",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "长句存量 中文 30／29、英文 48／48（超了就是新长出来的）"
+    },
+    {
+      "id": "N-38",
+      "criterion": "J-33",
+      "desc": "英文术语注解退回旧写法（括号把词切开）",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "括号切开单词 8 处：/en/monitor/（…s）、/en/monitor/（…s）、/en/checkup/（…s）、/en/completeness/（…s）"
     }
   ]
 }

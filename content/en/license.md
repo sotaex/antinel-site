@@ -23,11 +23,11 @@ Why the data is CC-BY-4.0 while the text is CC-BY-SA-4.0: data is meant to be re
 
 ## What neutrality means, in three concrete terms
 
-**One, judgement is decoupled from payment.** The verdict is not affected by paying. There is no "pay to unlock a looser policy" and there is no "pay to raise your score".
+**First, judgement is decoupled from payment.** The verdict is not affected by paying. There is no "pay to unlock a looser policy" and there is no "pay to raise your score".
 
-**Two, no passage fee, no ranking for sale.** We do not sell "verified", "certified" or "recommended" marks. Whether a page may say "this tool passed an Antinel check" is decided by a public rule judged by a machine. It cannot be bought.
+**Second, no passage fee, no ranking for sale.** We do not sell "verified", "certified" or "recommended" marks. Whether a page may say "this tool passed an Antinel check" is decided by a public rule judged by a machine. It cannot be bought.
 
-**Three, we do not take "help us pass" work.** If someone asks us to consult on making a tool pass the steward, we do not do it. Do that, and the rules stop being neutral.
+**Third, we do not take "help us pass" work.** If someone asks us to consult on making a tool pass the steward, we do not do it. Do that, and the rules stop being neutral.
 
 ## What we do not do
 

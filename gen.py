@@ -140,9 +140,9 @@ def build_facts(truth):
          "value": {"p50_ms": 65, "platform": "win32"},
          "evidence": "references/THREAT_MODEL.md（Linux/macOS 未测）"},
         {"id": "F-005",
-         "statement": "运行时零网络、纯标准库、无驻留进程",
-         "value": {"network": "否", "stdlib_only": "是", "daemon": "无"},
-         "evidence": "references/THREAT_MODEL.md"},
+         "statement": "运行时零网络、纯标准库、默认安装不起常驻进程",
+         "value": {"network": "否", "stdlib_only": "是", "daemon": "默认无"},
+         "evidence": "references/THREAT_MODEL.md；常驻只在开启宿主拦截后出现"},
         {"id": "F-006",
          "statement": "计分公式 score = 100 − 20×严重 − 5×警告（按「规则×对象」去重）",
          "value": {"formula": "100-20C-5W"},
@@ -357,9 +357,9 @@ def page_why(truth, facts):
         '<a class="btn" href="%s/sample/">先看一页样例</a></p>\n'
 
         '<h2 id="q6">六、谁不需要它</h2>\n'
-        '<p>三种人可以先不用：只用 AI 聊天、不在电脑上跑 AI 工具的人；'
-        '已经把 AI 工具关在容器里、并且有网络出口管控的人；'
-        '需要的是法律效力报告、而不是工程记录的人。</p>\n'
+        '<p>三种人可以先不用。第一种，只用 AI 聊天、不在电脑上跑 AI 工具的人。'
+        '第二种，已经把 AI 工具关在容器里、并且有网络出口管控的人。'
+        '第三种，需要法律效力报告、不需要工程记录的人。</p>\n'
         % (v["rules"], f["F-003"]["value"]["hosts"], C.BASE_PATH, C.BASE_PATH))
 
     md = ["# 给不看技术的人", "",
@@ -938,7 +938,8 @@ def build_facts_en(truth):
         "F-003": "%(hosts)d kinds of AI tool hosts are registered",
         "F-004": "One hook call costs about %(p50_ms)d ms (Windows; interpreter "
                  "start-up dominates. Linux and macOS were not measured.)",
-        "F-005": "No network at run time. Standard library only. No resident process.",
+        "F-005": "No network at run time. Standard library only. No resident "
+                 "process on a default install.",
         "F-006": "Score = 100 - 20 x critical - 5 x warning, de-duplicated by "
                  "rule x object",
         "F-007": "Ships with its own proof: %(assertions)s assertions pass, "
@@ -1401,8 +1402,8 @@ def page_why_en(truth, facts):
         '<a class="btn" href="%s/sample/">Look at the sample page</a></p>\n'
 
         '<h2 id="q6">6. Who does not need it</h2>\n'
-        '<p>You do not need it if all three are true: you run no AI tools on this '
-        'machine, the machine holds nothing a customer would ask about, and nobody '
+        '<p>You do not need it if all three are true. You run no AI tools on this '
+        'machine. The machine holds nothing a customer would ask about. Nobody '
         'will ever ask you to show your work. If one of those is false, run one '
         'check and see.</p>\n'
         % (v["rules"], f["F-003"]["value"]["hosts"], C.BASE_PATH, C.BASE_PATH))
@@ -1814,7 +1815,7 @@ def build(truth, facts):
             meta, body = got
             title = meta.get("title", title)
             if ("/en/%s/" % slug) in H.HUMAN_PAGES:
-                body = MD.explain_first(body, H.TERMS_EN, paren="()")
+                body = MD.explain_first(body, H.TERMS_EN, paren="()", lang="en")
             h = MD.render(body, 1)
             h = re.sub(r"<h1[^>]*>", '<h1>', h, count=1) if h.startswith("<h1") else \
                 '<h1>%s</h1>\n%s' % (R.esc(title), h)

@@ -13,7 +13,7 @@ audience: human
 
 ## Antinel 监理到底是什么
 
-一个装在你自己电脑上的独立第三方监理，看住 AI 编程工具的每一次工具调用：该拦的当场拦下、该提醒的提醒、每一件都记账。本地运行、运行时不联网、纯 Python 标准库、无驻留进程。
+一个装在你自己电脑上的独立第三方监理，看住 AI 编程工具的每一次工具调用：该拦的当场拦下，该提醒的当场提醒，每一件都记账。本地运行、运行时不联网、纯 Python 标准库、默认不起常驻进程。
 
 ## 它和杀毒软件有什么区别
 
@@ -21,7 +21,7 @@ audience: human
 
 ## 装了会不会让电脑变慢
 
-单次钩子调用时延约 {{facts.F-004.value.p50_ms}} 毫秒，其中大部分是 Python 解释器启动的开销。没有常驻后台进程，不占内存，不扫全盘。这个数只在 Windows 上测过，Linux 和 macOS 未测。
+单次钩子调用时延约 {{facts.F-004.value.p50_ms}} 毫秒，其中大部分是 Python 解释器启动的开销。默认没有常驻后台进程，不占内存，不扫全盘。这个数只在 Windows 上测过，Linux 和 macOS 未测。
 
 ## 它会不会把我的数据传出去
 
@@ -33,7 +33,7 @@ audience: human
 
 ## 支持哪些系统和 AI 工具
 
-第一版平台是 Windows。已验证能真实拦截的宿主是 Claude Code、ZCode、Qoder；其余宿主装完是审计与扫描模式，`antinel install` 会明说，不算装失败。登记表里共 {{facts.F-003.value.hosts}} 类宿主——**没被列出来的工具不等于安全**，只等于监理没有它的取证路径。
+第一版平台是 Windows。已验证能真实拦截的宿主是 Claude Code、ZCode、Qoder。其余宿主装完是审计与扫描模式，`antinel install` 会明说，不算装失败。登记表里共 {{facts.F-003.value.hosts}} 类宿主——**没被列出来的工具不等于安全**，只等于监理没有它的取证路径。
 
 ## 已经被拿走的东西能追回来吗
 
@@ -53,7 +53,7 @@ audience: human
 
 ## 我怎么验证它没骗我
 
-三件事：`antinel verify` 查审计链有没有被动过；`python -m scripts.run_harness` 复跑全部断言，得到你自己的结论（你的结论可以取代随包的）；`python challenge/tamper.py` 亲眼看它怎么被改坏、怎么报错。判据本身也公开在 `rules/default.json` 里，觉得不对就改。
+三件事。`antinel verify` 查审计链有没有被动过。`python -m scripts.run_harness` 复跑全部断言，得到你自己的结论；你的结论可以取代随包的。`python challenge/tamper.py` 亲眼看它怎么被改坏、怎么报错。判据本身也公开在 `rules/default.json` 里，觉得不对就改。
 
 ## 为什么叫「监理」，不叫「哨兵」
 

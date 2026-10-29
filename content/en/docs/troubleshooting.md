@@ -46,7 +46,7 @@ In that state you can use: recording, checkup, inventory, ledger. You cannot use
 
 ## Performance
 
-One checkpoint call costs about {{facts.F-004.value.p50_ms}} milliseconds, and most of that is the cost of starting the Python interpreter. There is no resident process and it does not scan the whole disk.
+One checkpoint call costs about {{facts.F-004.value.p50_ms}} milliseconds, and most of that is the cost of starting the Python interpreter. A default install starts no resident process, and it does not scan the whole disk.
 
 If it feels slow, confirm that number first — use `antinel digest --days 1` to see whether any single call was unusually long. If it is a slow interpreter start (cold start, antivirus real-time scanning, a Python on a network drive), that is not ours, but it does stack.
 

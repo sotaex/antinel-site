@@ -15,7 +15,7 @@ In one line: a steward is a guard rail, not an isolation layer. This page writes
 
 Three, ordered by how often they actually happen:
 
-1. **The tool itself steps out of line**: to "get the job done", an AI coding tool reads a file it should not read, packs the project and sends it to some server, or writes a config file outside the project.
+1. **The tool itself steps out of line**. To "get the job done", an AI coding tool reads a file it should not read. It packs the project and sends it to some server. It writes a config file outside the project.
 2. **Third-party content poisoning**: the skill package, MCP server or prompt template you installed hides instructions in it, or hides characters you cannot see.
 3. **Supply-chain name collision**: the package name is off by one letter, and what you installed is not what you meant.
 
@@ -35,15 +35,15 @@ What all three have in common: **none of them is a virus**. No malicious binary,
 
 This section is the point of this page.
 
-**One, it does not parse what a script does.** The checkpoint looks only at the text of a tool call: what the command line looks like, which file it wants to read, which domain it wants to reach. Put a dangerous action inside a `.py` or `.sh` file and run that file, and all the checkpoint sees is "run a script". It cannot stop it. There will be a record and a warning (`dst02_bash_path_suspect`), but the action is not blocked.
+**First, it does not parse what a script does.** The checkpoint looks only at the text of a tool call: what the command line looks like, which file it wants to read, which domain it wants to reach. Put a dangerous action inside a `.py` or `.sh` file and run that file. All the checkpoint sees is "run a script". It cannot stop it. It records it and raises a warning (`dst02_bash_path_suspect`), but it does not block the action.
 
-**Two, no promise of sandbox-grade isolation.** If you need real isolation, reach for a container or a virtual machine. The two do not conflict and neither replaces the other: the container handles "it cannot get in", the steward handles "whatever it did is recorded, and what should stop, stops".
+**Second, no promise of sandbox-grade isolation.** If you need real isolation, reach for a container or a virtual machine. The two do not conflict, and neither replaces the other. The container handles "it cannot get in". The steward handles "whatever it did is recorded, and what should stop, stops".
 
-**Three, alternate data streams: writes only.** Windows ADS (`file:stream`) can be blocked on the write path. The content inside the stream cannot be read back.
+**Third, alternate data streams: writes only.** It can block a Windows ADS (`file:stream`) on the write path. It cannot read back the content inside the stream.
 
-**Four, the output is not an inspection report.** What we produce is an audit and a security assessment, not a report from a third-party testing body. We say so on the [license page](/en/license/), without hedging.
+**Fourth, the output is not an inspection report.** What we produce is an audit and a security assessment, not a report from a third-party testing body. We say so on the [license page](/en/license/), without hedging.
 
-**Five, it cannot replace kernel-level protection.** The checkpoint is one callback inside a host. If the host does not call it, it is not there. If the host changes its protocol, or the tool bypasses the host and runs directly, the checkpoint sees nothing.
+**Fifth, it cannot replace kernel-level protection.** The checkpoint is one callback inside a host. If the host does not call it, it is not there. If the host changes its protocol, or the tool bypasses the host and runs directly, the checkpoint sees nothing.
 
 ## Properties at run time
 
@@ -51,13 +51,14 @@ This section is the point of this page.
 |---|---|---|
 | Network at run time | {{facts.F-005.value.network}} | a steward that reports to a cloud cannot answer to a local principal |
 | Dependencies | standard library only ({{facts.F-005.value.stdlib_only}}) | its own dependency chain cannot bring in new supply-chain risk |
-| Resident process | {{facts.F-005.value.daemon}} | it takes no background slot, does not sneak a run, and is gone when you shut down |
+| Resident process | {{facts.F-005.value.daemon}} | it takes no background slot and does not sneak a run. If you turn on host interception (`antinel host-shield enable`) there is one: it starts at logon, runs on this machine only, and uses no network |
 | One checkpoint call | about {{facts.F-004.value.p50_ms}} ms | on Windows the interpreter start dominates. Linux and macOS were not measured |
 
-That last number was measured on Windows only. Writing "not measured" is more honest than writing a number that looks good.
+We measured that last number on Windows only. Writing "not measured" is more honest than writing a number that looks good.
+
 ## Two known failure modes
 
-**Audit writes fail open by default.** When the disk is full or the permissions are wrong, the write into the audit chain fails. Our choice there is **to allow and make it visible** (`AUDIT_WRITE_FAILED`), not to block every action. The reason: blocking everything makes the whole machine unusable, and the user has no idea what happened. To switch to blocking, set `fail_closed_on_audit_loss` — but that is your decision to make.
+**Audit writes fail open by default.** When the disk is full or the permissions are wrong, the write into the audit chain fails. We allow the action and make it visible (`AUDIT_WRITE_FAILED`). We do not block every action. The reason: blocking everything makes the whole machine unusable, and the user has no idea what happened. To switch to blocking, set `fail_closed_on_audit_loss` — but that is your decision to make.
 
 **The checkpoint degrades to fallback rules.** When the rules file cannot be read, the checkpoint degrades to a small set of fallback rules (`rules_integrity_fallback`) and records it. During the degradation, blocking capability drops sharply, so when this signal appears you should re-run the install.
 

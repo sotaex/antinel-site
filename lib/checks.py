@@ -600,6 +600,81 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
         add("J-30", not dup, "跨页重复长句 %d%s"
             % (len(dup), ("：" + "；".join(dup[:3])) if dup else ""))
 
+    # ---- 语言：句长（J-31 / J-32）----
+    # 依据 ASD-STE100：程序句 ≤20 词，描述句 ≤25 词；中文按字数对齐。
+    # 本站现状达不到 25 词，所以分两层，两层都报数：
+    #   J-31 硬上限（中文 70 字 / 英文 35 词）必须是 0 — 超了当场红；
+    #   J-32 存量预算（中文 50 字 / 英文 25 词）只许降不许升。
+    #       它红不了，但每次构建都把「离 STE 还有多少句」印出来 —
+    #       存量不印出来，就等于宣称已经合规。
+    # 量的是 <main> 里的可见正文。代码块与表格不算：那是引用与枚举，不是行文。
+    # 链接文字算、网址不算（网址算进去量的是排版，不是句子）。
+    _LONG = {"zh": 70, "en": 35}          # 硬上限
+    _BUDGET = {"zh": 50, "en": 25}        # 存量线
+    # 存量封顶：只许往下调。英文这一档 2026-10-29 记的是 48，不是 45——
+    # 45 是英文括号缺前导空格时数出来的：`verdicts(the …` 粘成一个词，
+    # 每条术语注解都少算一个词。中文 29 不受影响（中文括号本来不加空格）。
+    # 记真实值，不记好看的值：这条线的作用是把「还差多少」摆出来，不是自我表扬。
+    _BUDGET_MAX = {"zh": 29, "en": 48}
+    hard, over = [], {"zh": 0, "en": 0}
+    for p in pages:
+        # 规则页不进这条判据。那一页是从 rules/default.json 的字段直出的
+        # （类别／级别／触发情形／处置建议），字段之间没有句末标点，整页会被
+        # 连成一句「252 字」。那不是句子长，是模板没有句子——拿句长判据去量它，
+        # 量到的是排版。第一次跑实测：121 处里 118 处是这一种。
+        # 英文镜像在 /en/rules/，所以按「路径里有没有 /rules」判，不按前缀。
+        if "/rules" in p["path"]:
+            continue
+        m = re.search(r'<main id="main"[^>]*>(.*?)</main>', p["html"], re.S)
+        body = m.group(1) if m else p["content"]
+        body = re.sub(r"<(code|pre)[^>]*>.*?</\1>", " ", body, flags=re.S)
+        body = re.sub(r"<table[^>]*>.*?</table>", " ", body, flags=re.S)
+        # ★ 块级标签收尾处要补分隔符。不补的话 `<h2>标题</h2><p>正文…。` 被
+        #   `_strip_tags` 连成一句「标题正文」，标题和每一条列表项都会被算进句子长度。
+        #   第一版就是这么虚报了 75 处——量到的是 HTML 块结构，不是句子。
+        body = re.sub(r"</(?:p|h[1-6]|li|div|td|th|tr|blockquote|dd|dt|section)>",
+                      "\n", body)
+        body = re.sub(r"<br\s*/?>", "\n", body)
+        txt = _strip_tags(body)
+        lang = "en" if p["lang"] == "en" else "zh"
+        if lang == "en":
+            parts = re.split(r"(?<=[.!?])\s+|\n", txt)
+        else:
+            parts = re.split(r"[。！？\n]", txt)
+        for s in parts:
+            s = s.strip()
+            if not s:
+                continue
+            n = len(s.split()) if lang == "en" else len(re.sub(r"\s+", "", s))
+            if n > _LONG[lang]:
+                hard.append("%s（%d）" % (p["path"], n))
+            elif n > _BUDGET[lang]:
+                over[lang] += 1
+    add("J-31", not hard, "超长句 %d 处（上限 中文 %d 字／英文 %d 词）%s"
+        % (len(hard), _LONG["zh"], _LONG["en"],
+           ("：" + "、".join(hard[:4])) if hard else ""))
+    add("J-32", over["zh"] <= _BUDGET_MAX["zh"] and over["en"] <= _BUDGET_MAX["en"],
+        "长句存量 中文 %d／%d、英文 %d／%d（超了就是新长出来的）"
+        % (over["zh"], _BUDGET_MAX["zh"], over["en"], _BUDGET_MAX["en"]))
+
+    # J-33 括号不许把一个词切成两半
+    # 术语解释是渲染时插进句子中间的（lib/md.py 的 explain_first）。插错位置，
+    # 线上就会出现 "verdict(the one conclusion…)s" —— 词被括号劈开，
+    # 读者看到的是一个不存在的词。2026-10-29 实测 /en/faq/ 是这种。
+    # 这一族在任何语义检查里都看不见：它长得就像一句正常的括号注解。
+    broken = []
+    for p in pages:
+        m = re.search(r'<main id="main"[^>]*>(.*?)</main>', p["html"], re.S)
+        body = re.sub(r"<(code|pre)[^>]*>.*?</\1>", " ", m.group(1) if m else p["html"],
+                      flags=re.S)
+        # 表格要剥掉：单元格之间的边界没有标点，`(the NET family)` 后面紧跟
+        # 下一个单元格的首字母，会被当成「括号切开了词」。第一版就是这么虚报 4 处。
+        body = re.sub(r"<table[^>]*>.*?</table>", " ", body, flags=re.S)
+        for mm in re.finditer(r"[（(][^）()]{4,}[）)]([a-z])", _strip_tags(body)):
+            broken.append("%s（…%s）" % (p["path"], mm.group(1)))
+    add("J-33", not broken, "括号切开单词 %d 处%s"
+        % (len(broken), ("：" + "、".join(broken[:4])) if broken else ""))
+
     # ---- J-16 英文镜像 ----
     # 三条一起查，缺一条镜像就是坏的：
     #   1. 一一对应：每个中文页都有一个 /en/ 同题页，反过来也一样。

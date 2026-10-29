@@ -13,7 +13,7 @@ In one line: the twelve questions we are asked most. Each answer stands on its o
 
 ## What is Antinel Steward, exactly
 
-An independent third-party steward installed on your own computer, watching every tool call an AI coding tool makes: what should be blocked is blocked on the spot, what should be warned about is warned about, and every single one is recorded. It runs locally, takes no network at run time, uses the Python standard library only, and keeps no resident process.
+An independent third-party steward that you install on your own computer. It watches every tool call an AI coding tool makes. It blocks on the spot what should be blocked, warns where a warning is due, and records every single one. It runs locally, uses no network at run time, uses the Python standard library only, and starts no resident process on a default install.
 
 ## How is it different from antivirus software
 
@@ -21,11 +21,11 @@ Antivirus looks for malicious patterns in files. A steward asks whether this cal
 
 ## Will it slow my computer down
 
-One checkpoint call costs about {{facts.F-004.value.p50_ms}} milliseconds, and most of that is the cost of starting the Python interpreter. There is no resident background process, it takes no memory, and it does not scan the whole disk. Only Windows was measured for that figure. Linux and macOS have not been.
+One checkpoint call costs about {{facts.F-004.value.p50_ms}} milliseconds, and most of that is the cost of starting the Python interpreter. A default install starts no resident background process, it takes no memory, and it does not scan the whole disk. Only Windows was measured for that figure. Linux and macOS have not been.
 
 ## Could it send my data out
 
-No. At run time there is no network, the standard library is all it uses, and there is no resident process. The checkup, the scan and the ledger all run to completion on this machine, and the result does not leave it. That is the premise of it being "a steward answerable to the principal" — one that reports to a cloud cannot answer to a local principal.
+No. At run time there is no network, the standard library is all it uses, and a default install starts no resident process. The checkup, the scan and the ledger all run to completion on this machine, and the result does not leave it. That is the premise of it being "a steward answerable to the principal" — one that reports to a cloud cannot answer to a local principal.
 
 ## Does it cost anything
 
@@ -37,7 +37,7 @@ The first-version platform is Windows. The hosts verified to block for real are 
 
 ## Can data that was already taken out be recovered
 
-No. A steward is a guard rail, not a recovery tool: it governs what comes after, and records what already happened. To judge "was anything taken out before", run one checkup and read the six verdicts — 🔴 it recorded that it packed, 🟠 it recorded that it sent, 🟡 it recorded that it syncs. Any of those three appearing means there are traces.
+No. A steward is a guard rail, not a recovery tool. It governs what comes after, and it records what already happened. To judge "was anything taken out before", run one checkup and read the six verdicts. 🔴 it recorded that it packed. 🟠 it recorded that it sent. 🟡 it recorded that it syncs. Any of those three appearing means there are traces.
 
 ## What is the difference between "not checked" and "no record found"
 
