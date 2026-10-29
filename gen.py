@@ -924,7 +924,7 @@ GATE_NAMES_EN = {1: "Content safety", 2: "Sensitive surface",
 
 # F-005 的值是真源里的中文三态（是／否／无）。英文页要显示英文，
 # 但**只翻这三个 token**，别的值一个字符都不动——否则又是一份手写副本。
-_CN_TRIPLE = {"是": "yes", "否": "no", "无": "none"}
+_CN_TRIPLE = {"是": "yes", "否": "no", "无": "none", "默认无": "none by default"}
 
 
 def build_facts_en(truth):
@@ -961,10 +961,20 @@ def build_facts_en(truth):
             raise BuildError("英文事实清单缺 %s 的 statement——先补 gen.py 的 STMT" % cid)
         val = dict(c["value"])
         for k in list(val):
-            # 只翻三个中文 token，且只翻字符串——F-008 的 verdicts 是列表，
-            # 列表不能做 dict 成员判断（unhashable），而且它本来就不该被翻。
-            if isinstance(val[k], str) and val[k] in _CN_TRIPLE:
+            # 只翻这三个（现在四个）中文 token，且只翻字符串——F-008 的 verdicts
+            # 是列表，列表不能做 dict 成员判断（unhashable），而且它本来就不该被翻。
+            # ★ 查不到就必须报错，不许原样留着。原来查不到就跳过，于是中文会
+            #   静默漏进英文页：2026-10-29 把 daemon 从「无」改成「默认无」之后，
+            #   英文 threat-model 页那一格直接显示「默认无」，构建全绿。
+            #   一张映射表 + 一个「查不到就算了」的 fallback ＝ 一处改、另一处不响。
+            if not isinstance(val[k], str):
+                continue
+            if val[k] in _CN_TRIPLE:
                 val[k] = _CN_TRIPLE[val[k]]
+            elif re.search(r"[\u4e00-\u9fff]", val[k]):
+                raise BuildError(
+                    "F 值里有中文没翻：%s.%s = %r —— 往 gen.py 的 _CN_TRIPLE 里加一条"
+                    % (cid, k, val[k]))
         fmt = {k: v for k, v in val.items()}
         fmt["verdicts"] = "/".join(val.get("verdicts", []))
         out.append({"id": cid, "statement": STMT[cid] % fmt, "value": val,
