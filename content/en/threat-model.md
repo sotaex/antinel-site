@@ -29,13 +29,13 @@ What all three have in common: **none of them is a virus**. No malicious binary,
 - Deleting, writing outside the project, changing terminal startup config, setting an auto-start entry, writing an alternate data stream, breaking permission ownership.
 - Reaching a domain outside the allowlist, networking built into code, a strange domain appearing in a command, building a covert outbound channel.
 - A skill file hiding injected instructions, invisible characters, an over-long encoded payload, executing immediately after decoding.
-- A skill name that disagrees with its folder, an MCP config that was changed, holds a plaintext key, points at a remote server, or has a poisoned tool description, and installing a colliding package name.
+- A skill name that disagrees with its folder. An MCP config that was changed, holds a plaintext key, points at a remote server, or has a poisoned tool description. A colliding package name at install time.
 
 ## What it does not stop
 
 This section is the point of this page.
 
-**First, it does not parse what a script does.** The checkpoint looks only at the text of a tool call: what the command line looks like, which file it wants to read, which domain it wants to reach. Put a dangerous action inside a `.py` or `.sh` file and run that file. All the checkpoint sees is "run a script". It cannot stop it. It records it and raises a warning (`dst02_bash_path_suspect`), but it does not block the action.
+**First, it does not parse what a script does.** The checkpoint looks only at the text of a tool call. What does the command line look like? Which file does it want to read? Which domain does it want to reach? Put a dangerous action inside a `.py` or `.sh` file and run that file. All the checkpoint sees is "run a script". It cannot stop it. It records it and raises a warning (`dst02_bash_path_suspect`), but it does not block the action.
 
 **Second, no promise of sandbox-grade isolation.** If you need real isolation, reach for a container or a virtual machine. The two do not conflict, and neither replaces the other. The container handles "it cannot get in". The steward handles "whatever it did is recorded, and what should stop, stops".
 
@@ -72,4 +72,4 @@ The reason is direct: if a critical block could be relaxed, then "allowlist" bec
 
 1. We do not promise "install it and your data cannot be stolen". We promise "if it is stolen there will be a trace, and you can re-compute it".
 2. We do not promise coverage of every tool. There are {{facts.F-003.value.hosts}} kinds of hosts on the register. Outside it, we do not know where a tool writes its traces.
-3. We do not promise the verdict is always right. That is why the audit chain only grows, the rules are public, and a third-party re-run can replace the verdict we ship — see [audit chain and re-runs](/en/audit/).
+3. We do not promise the verdict is always right. That is why the audit chain only grows and the rules are public. A third-party re-run can replace the verdict we ship. See [audit chain and re-runs](/en/audit/).

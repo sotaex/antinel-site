@@ -30,7 +30,7 @@ Two signals. Either one appearing means degradation:
 1. The `rules fallback` line in the output of `antinel report` is not 0.
 2. A `rules_integrity_fallback` event appears in the audit chain.
 
-What degradation means: the checkpoint did not read the new rules and is using a small set of built-in fallback rules. Blocking capability drops sharply at that point, but **on the surface everything looks normal** — which is why these two signals are the only way to find it. You cannot find it by feel.
+What degradation means: the checkpoint did not read the new rules and is using a small set of built-in fallback rules. Blocking capability drops sharply at that point, but **on the surface everything looks normal**. That is why these two signals are the only way to find it. You cannot find it by feel.
 
 There is exactly one fix: re-run `antinel install`.
 
@@ -70,7 +70,7 @@ Three steps:
 2. Copy the old machine's `.psl/audit/` across (optional, to continue the history).
 3. Run `antinel verify` to confirm the chain joins up.
 
-The chain is stored by file and by day, so copying it across does not break it — unless there are missing date files in between, and that gets reported.
+The chain is stored by file and by day, so copying it across does not break it. The one exception is missing date files in between, and that gets reported.
 
 ## Where the version number lives
 

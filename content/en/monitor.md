@@ -19,7 +19,7 @@ The {{facts.F-001.value.rules}} rules block **actions**: what this call read, wh
 2. The action happened outside the checkpoint (a tool's updater, a background service, another client that is not registered).
 3. The action itself was allowed, but the result was a transfer out (a pack-and-upload uses an ordinary network request).
 
-These three can only be answered by "going through the traces the tool left itself" and "looking at what this machine is connecting out to right now". That is what the six mechanisms are for.
+These three can only be answered in two ways. One is "going through the traces the tool left itself". The other is "looking at what this machine is connecting out to right now". That is what the six mechanisms are for.
 
 ## The six at a glance
 
@@ -39,11 +39,11 @@ antinel host-scan
 antinel host-audit
 ```
 
-`host-scan` inventories the whole machine. Read-only, about one to two minutes: which AI tools are installed, what version each is at, and whether any of them left traces of a transfer. `host-audit` looks at today only, and answers "did any of these tools step out of line today".
+`host-scan` inventories the whole machine. Read-only, about one to two minutes. It reports which AI tools are installed, what version each is at, and whether any of them left traces of a transfer. `host-audit` looks at today only, and answers "did any of these tools step out of line today".
 
 The word "self-reported" is deliberate. What the steward reads is **a field the tool wrote itself** — its own "last upload time", its own "size after the last pack". This is not an action we watched, so we say "self-reported" and not "confirmed".
 
-Coverage is the {{facts.F-003.value.hosts}} kinds of hosts on the register. **A tool that is not on the list is not therefore safe.** It only means the steward has no way to collect its records.
+Coverage is the {{facts.F-003.value.hosts}} kinds of hosts on the register. **Being absent from that list does not make a tool safe.** For an unlisted tool, the steward simply has no way to collect its records.
 
 ## 2. Egress ledger
 
@@ -51,7 +51,7 @@ Coverage is the {{facts.F-003.value.hosts}} kinds of hosts on the register. **A 
 antinel egress
 ```
 
-About every 30 seconds it samples the system's network connection table and records only the outbound connections of AI tool processes: process name, PID, remote address, protocol, time. **It does not record payloads.** No packet capture, no looking at content.
+About every 30 seconds it samples the system's network connection table. It records only the outbound connections of AI tool processes: process name, PID, remote address, protocol, time. **It does not record payloads.** No packet capture, no looking at content.
 
 The framing matters: **a connection is not a problem**. A pack-and-upload is a long, high-volume connection. An ordinary question-and-answer is a short one. The ledger gives you the facts. The judgement is yours.
 
@@ -75,9 +75,9 @@ antinel canary plant
 antinel canary list
 ```
 
-Plant a marked file in your project. Anyone who reads it triggers a SEC-11 reminder and a record. If that mark shows up in a tool's output, in a log, or in the content of some upload, that is evidence of a transfer out.
+Plant a marked file in your project. Anyone who reads it triggers a SEC-11 reminder and a record. The mark may show up in a tool's output, in a log, or in an uploaded file. Any of those is evidence of a transfer out.
 
-The good thing about a canary is that it **does not require you to trust any party**: you do not have to believe the tool did not upload. You only have to look at whether the mark got out.
+The good thing about a canary is that it **does not require you to trust any party**. You do not have to believe the tool did not upload. You only have to look at whether the mark got out.
 
 ## 5. Safe zone
 
@@ -101,11 +101,11 @@ antinel inbox report
 
 The result has to be something you can hand over. `ui` gives you a clickable page in a local browser. `brief` gives you one page. `digest` gives you a timeline. `inbox` gives you the pending items.
 
-All six mechanisms land on the same evidence framing, which is translated into the six verdicts — see [the six verdicts](/en/verdicts/). The easiest place to get the wording wrong is here: "checked, no record found" and "not checked" must not look alike. How the checkup page does that is written in [the checkup](/en/checkup/).
+All six mechanisms land on the same evidence framing. That framing becomes the six verdicts — see [the six verdicts](/en/verdicts/). One place gets the wording wrong most easily. "Checked, no record found" and "not checked" must not look alike. How the checkup page does that is written in [the checkup](/en/checkup/).
 
 ## What the six mechanisms do not do
 
 - No packet capture, no reading payloads, no traffic reconstruction.
 - Nothing is uploaded. All six run to completion on this machine.
-- No efficiency ranking of people. Only the behaviour and the consumption of agents are recorded.
+- No efficiency ranking of people. The steward records only the behaviour and the consumption of agents.
 - No promise of covering tools that are not registered.

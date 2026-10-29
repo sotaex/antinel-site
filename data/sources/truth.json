@@ -1,6 +1,6 @@
 {
   "schema": "antinel-truth/1",
-  "captured_at": "2026-10-29T15:09:52+08:00",
+  "captured_at": "2026-10-29T18:07:38+08:00",
   "src_path": "D:\\psl\\poc\\antinel-security",
   "product_version": "0.61.0",
   "rules_version": "0.61.0",
@@ -1609,5 +1609,39 @@
     "digests": 21,
     "digests_total": 21,
     "raw": "live PreToolUse block of a real .env read in ZCode (SEC-01) plus a full-assertion judgment run; digest check 21/21 digests match this build (assertions 325/325)"
+  },
+  "measured": {
+    "hook_latency": {
+      "p50_ms": 2651,
+      "n": 5,
+      "min_ms": 2245,
+      "max_ms": 4634,
+      "platform": "win32",
+      "at": "2026-10-29T18:07:57+08:00",
+      "usable_as_fact": false,
+      "why_not": "cwd 是临时目录（非 git 仓），触发的是产品的超时路径，不是用户机器上的形状",
+      "method": "子进程冷启动 5 次取中位数；隔离家目录与中枢"
+    },
+    "stdlib": {
+      "stdlib_only": "是",
+      "externals": [],
+      "files_scanned": 81,
+      "dirs": [
+        "hooks",
+        "psl",
+        "scripts",
+        "tools"
+      ],
+      "at": "2026-10-29T18:08:02+08:00",
+      "method": "ast 解析运行时代码的 import，比对 sys.stdlib_module_names"
+    },
+    "scoring": {
+      "critical_weight": 20,
+      "warning_weight": 5,
+      "source": "scripts/report.py",
+      "line": 378,
+      "at": "2026-10-29T18:08:02+08:00",
+      "method": "正则解析计分实现的源码"
+    }
   }
 }

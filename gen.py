@@ -51,6 +51,7 @@ CAT_EN = {
 SEV_EN = {"critical": "critical (blocked on hit)", "warning": "warning (allowed, logged)"}
 
 HAND = [
+    ("help", "从哪开始", "按你现在的处境分流：第一次装、出了状况、要核对数字，各去哪一页。"),
     ("steward", "为什么叫监理", "监理＝按事先写好的标准把关、记录、必要时叫停的独立第三方（GB/T 19668 谱系）。"),
     ("gates", "四道门", "内容安全／敏感面／元数据与出联／行为，四道门各挡什么、挡不住什么。"),
     ("monitor", "数据外传监控六机制", "自认记录／出口记录／宿主拦截／诱饵文件／安全区／报告呈现，六种机制各管一段。"),
@@ -68,6 +69,8 @@ HAND = [
 # 英文镜像的手写页清单。slug 与中文一一对应（J-16），正文在 content/en/<slug>.md。
 # 标题与描述只做 <title> 与 meta description 用；页面里的 H1 以 md 正文为准。
 HAND_EN = [
+    ("help", "Where to start",
+     "Pick the page that fits where you are: first install, something is off, or you want to check a number."),
     ("steward", "Why we call it a steward",
      "A steward checks against written rules, records what it sees, and can stop an action."),
     ("gates", "The four gates",
@@ -122,6 +125,22 @@ def build_facts(truth):
     sp = truth["selfproof"]
     vk = list(truth["verdicts"].keys())
 
+    # ★ F-004 / F-005 / F-006 以前是写死在这里的三个字面量，evidence 指向 README
+    #   或 THREAT_MODEL.md。那是「文档这么说」，不是「我们量过」——两者在页面上
+    #   长得一模一样，读者分不出来。现在三条都从快照的 measured 块取，取不到就
+    #   报错：宁可构建失败，也不许把上一版的值当作这一版的实测。
+    me = truth.get("measured") or {}
+    std = me.get("stdlib") or {}
+    sco = me.get("scoring") or {}
+    for k, v in (("stdlib", std), ("scoring", sco)):
+        if not v:
+            raise BuildError("真源快照缺实测块 measured.%s —— 跑 "
+                             "python gen.py --refresh-sources 重取" % k)
+    ext = std.get("externals") or []
+    f5_stmt = ("运行时零网络、纯标准库、默认安装不起常驻进程"
+               if std.get("stdlib_only") == "是"
+               else "默认安装不起常驻进程；运行时有外部依赖：%s" % "、".join(ext))
+
     claims = [
         {"id": "F-001",
          "statement": "%d 条护盾规则，分 %d 类，按 %d 道审查门组织" % (len(rules), len(cats), len(gate_nums)),
@@ -136,17 +155,27 @@ def build_facts(truth):
          "value": {"hosts": len(truth["hosts"])},
          "evidence": "rules/hosts/*.json@%s" % truth["product_version"]},
         {"id": "F-004",
-         "statement": "单次钩子调用时延约 65 ms（Windows，解释器启动占主导）",
+         "statement": "产品方声明单次钩子调用时延约 65 毫秒（Windows）",
          "value": {"p50_ms": 65, "platform": "win32"},
-         "evidence": "references/THREAT_MODEL.md（Linux/macOS 未测）"},
+         "evidence": "声明，未在本站复测：references/THREAT_MODEL.md。本站试过在"
+                     "临时目录里端到端计时，量到 3 秒上下——那是非 git 目录触发的"
+                     "超时路径，形状与用户机器不同，不作数，所以不写进这一页"},
         {"id": "F-005",
-         "statement": "运行时零网络、纯标准库、默认安装不起常驻进程",
-         "value": {"network": "否", "stdlib_only": "是", "daemon": "默认无"},
-         "evidence": "references/THREAT_MODEL.md；常驻只在开启宿主拦截后出现"},
+         "statement": f5_stmt,
+         "value": {"network": "否", "stdlib_only": std.get("stdlib_only"),
+                   "daemon": "默认无"},
+         "evidence": "标准库面为实测：ast 扫描 %d 个运行时文件，比对标准库清单，"
+                     "外部依赖 %d 个。常驻与联网为声明，来源是安装代码路径与"
+                     "威胁模型页——那两项没有在本机做联网观测"
+                     % (std.get("files_scanned", 0), len(ext))},
         {"id": "F-006",
-         "statement": "计分公式 score = 100 − 20×严重 − 5×警告（按「规则×对象」去重）",
-         "value": {"formula": "100-20C-5W"},
-         "evidence": "README.md#计分"},
+         "statement": "计分公式 score = 100 − %d×严重 − %d×警告（按「规则×对象」去重）"
+                      % (sco["critical_weight"], sco["warning_weight"]),
+         "value": {"formula": "100-%dC-%dW" % (sco["critical_weight"],
+                                               sco["warning_weight"]),
+                   "_cw": sco["critical_weight"], "_ww": sco["warning_weight"]},
+         "evidence": "实测：%s，位置 %s 第 %d 行（不是抄文档）"
+                     % (sco["method"], sco["source"], sco["line"])},
         {"id": "F-007",
          "statement": "随包自证：%s 项断言全过，%s 个摘要一致" % (sp.get("assertions_total") or "?", sp.get("digests_total") or "?"),
          "value": {"assertions": sp.get("assertions_total"), "digests": sp.get("digests_total")},
@@ -216,13 +245,22 @@ def gate_of(truth, cat):
     return sorted({int(n) for s in segs for n in re.findall(r"\d+", s)})
 
 
+def shown_values(c):
+    """事实的可见值。下划线开头的键只给格式串与数据集用，不上面。
+
+    否则 facts 页会把「65／win32／15」三格并排，读者不知道 15 是次数还是毫秒。
+    机读层（/datasets/）仍然拿完整 dict —— 那里要的就是原始字段。
+    """
+    return [v for k, v in c["value"].items() if not k.startswith("_")]
+
+
 def page_facts(facts, truth):
     data_date = truth["captured_at"][:10]
     rows = []
     for c in facts:
         vals = "／".join("<strong>%s</strong>" % R.esc(str(v)) if not isinstance(v, list)
                         else "／".join("<strong>%s</strong>" % R.esc(str(x)) for x in v)
-                        for v in c["value"].values())
+                        for v in shown_values(c))
         rows.append('<h2 id="%s">%s　%s</h2>\n<p>值：%s。证据：<code>%s</code>。</p>'
                     % (c["id"].lower(), c["id"], R.esc(c["statement"]), vals,
                        R.esc(c["evidence"])))
@@ -237,7 +275,7 @@ def page_facts(facts, truth):
           "", "产品版本 %s · 数据日期 %s" % (truth["product_version"], data_date), ""]
     for c in facts:
         vals = "／".join(str(v) if not isinstance(v, list) else "/".join(map(str, v))
-                        for v in c["value"].values())
+                        for v in shown_values(c))
         md += ["## %s　%s" % (c["id"], c["statement"]), "",
                "值：%s。证据：`%s`。" % (vals, c["evidence"]), ""]
     return body, "\n".join(md)
@@ -427,7 +465,7 @@ def page_sample(truth, facts):
         '<p class="sheet-note">读法：「它自己记着」＝工具自己写下的记录，不是我们亲眼看见的动作。'
         '「没查到」＝这一项没查成，不等于清白。</p>\n'
         '<p class="sheet-next"><strong>下一步：</strong>'
-        '① 先处理「发出去过」那一个；② 对两个「没查到」补一次人工确认；'
+        '① 先处理「发出去过」那一个。② 对两个「没查到」补一次人工确认。'
         '③ 把这一页存档，作为本次检查的记录。</p>\n'
         '</div>\n'
         '<h2 id="how">怎么得到你自己这一页</h2>\n'
@@ -936,12 +974,12 @@ def build_facts_en(truth):
         "F-002": "%(critical)d rules block on hit, %(warning)d rules warn "
                  "and let the action through",
         "F-003": "%(hosts)d kinds of AI tool hosts are registered",
-        "F-004": "One hook call costs about %(p50_ms)d ms (Windows; interpreter "
-                 "start-up dominates. Linux and macOS were not measured.)",
+        "F-004": "One hook call costs about %(p50_ms)d ms as stated by the product "
+                 "team (Windows; not re-measured on this site)",
         "F-005": "No network at run time. Standard library only. No resident "
                  "process on a default install.",
-        "F-006": "Score = 100 - 20 x critical - 5 x warning, de-duplicated by "
-                 "rule x object",
+        "F-006": "Score = 100 - %(_cw)d x critical - %(_ww)d x warning, "
+                 "de-duplicated by rule x object",
         "F-007": "Ships with its own proof: %(assertions)s assertions pass, "
                  "%(digests)s digests match",
         "F-008": "Six evidence verdicts: %(verdicts)s",
@@ -977,7 +1015,19 @@ def build_facts_en(truth):
                     % (cid, k, val[k]))
         fmt = {k: v for k, v in val.items()}
         fmt["verdicts"] = "/".join(val.get("verdicts", []))
-        out.append({"id": cid, "statement": STMT[cid] % fmt, "value": val,
+        # F-005 的英文要跟着实测走：扫描发现外部依赖就不能再说 "standard library only"。
+        # 断言随测量变，而不是测量随断言变。
+        if cid == "F-005":
+            std = (truth.get("measured") or {}).get("stdlib") or {}
+            ext = std.get("externals") or []
+            stmt = ("No network at run time. Standard library only. No resident "
+                    "process on a default install."
+                    if std.get("stdlib_only") == "是" else
+                    "No resident process on a default install. At run time there "
+                    "are external dependencies: %s." % ", ".join(ext))
+        else:
+            stmt = STMT[cid] % fmt
+        out.append({"id": cid, "statement": stmt, "value": val,
                     "evidence": c["evidence"]})
     return out
 
@@ -997,7 +1047,7 @@ def page_facts_en(facts, truth):
     for c in facts:
         vals = " / ".join("<strong>%s</strong>" % R.esc(str(v)) if not isinstance(v, list)
                           else " / ".join("<strong>%s</strong>" % R.esc(str(x)) for x in v)
-                          for v in c["value"].values())
+                          for v in shown_values(c))
         rows.append('<h2 id="%s">%s　%s</h2>\n<p>Value: %s. Evidence: <code>%s</code>.</p>'
                     % (c["id"].lower(), c["id"], R.esc(c["statement"]), vals,
                        R.esc(c["evidence"])))
@@ -1015,7 +1065,7 @@ def page_facts_en(facts, truth):
           "Product version %s · data date %s" % (truth["product_version"], data_date), ""]
     for c in facts:
         vals = " / ".join(str(v) if not isinstance(v, list) else "/".join(map(str, v))
-                          for v in c["value"].values())
+                          for v in shown_values(c))
         md += ["## %s　%s" % (c["id"], c["statement"]), "",
                "Value: %s. Evidence: `%s`." % (vals, c["evidence"]), ""]
     return body, "\n".join(md)
@@ -1460,10 +1510,9 @@ def page_sample_en(truth, facts):
         '<p class="sheet-note">How to read this: "it recorded" means the tool wrote '
         'the line itself. We did not watch the action. "Not checked" means that '
         'item did not get checked. It does not mean clean.</p>\n'
-        '<p class="sheet-next"><strong>Next step:</strong>'
-        '① deal with the one that recorded a send first; ② do a manual pass on the '
-        'two that could not be checked; ③ file this page as the record of this '
-        'check.</p>\n'
+        '<p class="sheet-next"><strong>Next step:</strong> '
+        '① deal with the one that recorded a send first. ② do a manual pass on the '
+        'two that could not be checked. ③ file this page as the record of this check.</p>\n'
         '</div>\n'
         '<h2 id="how">How to get your own page</h2>\n'
         '<p>One command. Read-only. Nothing uploaded. The result stays on your '

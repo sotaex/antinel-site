@@ -40,7 +40,7 @@ When you state a verdict out loud, these three go with it:
 
 1. **"It recorded"** — the verdict comes from a field the tool wrote itself. It is not an action we watched.
 2. **"No record found is not the same as nothing happened"** — ⚪ checked, no record found, is not a clean bill.
-3. **"Not checked is not the same as no problem"** — ⚫ not checked is a blind spot, and it must be reported as its own number.
+3. **"Not checked is not the same as no problem"** — ⚫ not checked is a blind spot. It must be reported as its own number.
 
 Drop any one of them and the reader will hear "not checked" as "safe". That is the worst mistake we can make.
 

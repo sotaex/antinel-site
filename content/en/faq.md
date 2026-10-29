@@ -17,7 +17,7 @@ An independent third-party steward that you install on your own computer. It wat
 
 ## How is it different from antivirus software
 
-Antivirus looks for malicious patterns in files. A steward asks whether this call's action was allowed in the first place. "An agent read your `.env` and then exited normally" is not a virus, so antivirus says nothing, while the steward blocks it on the spot and records it. Neither covers for the other.
+Antivirus looks for malicious patterns in files. A steward asks whether this call's action was allowed in the first place. "An agent read your `.env` and then exited normally" is not a virus. Antivirus says nothing, while the steward blocks it on the spot and records it. Neither covers for the other.
 
 ## Will it slow my computer down
 
@@ -25,15 +25,15 @@ One checkpoint call costs about {{facts.F-004.value.p50_ms}} milliseconds, and m
 
 ## Could it send my data out
 
-No. At run time there is no network, the standard library is all it uses, and a default install starts no resident process. The checkup, the scan and the ledger all run to completion on this machine, and the result does not leave it. That is the premise of it being "a steward answerable to the principal" — one that reports to a cloud cannot answer to a local principal.
+No. At run time there is no network, the standard library is all it uses, and a default install starts no resident process. The checkup, the scan and the ledger all run to completion on this machine, and the result does not leave it. That is the premise of it being "a steward answerable to the principal". One that reports to a cloud cannot answer to a local principal.
 
 ## Does it cost anything
 
-No. The code is open source under Apache-2.0, and `pip install antinel` installs it. We do not sell "certification", "placement" or "pass marks", and we do not take "help us pass" work — that would stop the rules being neutral. See [license and neutrality](/en/license/).
+No. The code is open source under Apache-2.0, and `pip install antinel` installs it. We do not sell "certification", "placement" or "pass marks". We do not take "help us pass" work either, because that would stop the rules being neutral. See [license and neutrality](/en/license/).
 
 ## Which systems and AI tools are supported
 
-The first-version platform is Windows. The hosts verified to block for real are Claude Code, ZCode and Qoder. The rest install into audit-and-scan mode: they still record and can still be checked up, they just cannot block. `antinel install` says so plainly, and that is not a failed install. The register holds {{facts.F-003.value.hosts}} kinds of hosts in total — **a tool that is not on the list is not therefore safe**, it only means the steward has no way to collect its records.
+The first-version platform is Windows. Three hosts verified to block for real: Claude Code, ZCode and Qoder. The rest install into audit-and-scan mode: they still record and can still be checked up, they just cannot block. `antinel install` says so plainly, and that is not a failed install. The register holds {{facts.F-003.value.hosts}} kinds of hosts in total. **A tool that is not on the list is not therefore safe.** It only means the steward has no way to collect its records.
 
 ## Can data that was already taken out be recovered
 
@@ -45,7 +45,7 @@ A long way. ⚪ "checked, no record found" means the scanner got there and no ev
 
 ## Can it stop an agent deleting my files
 
-It can block a command-level deletion (`DST-01`, critical, blocked on the spot). But **it does not parse what a script does**: put the deletion inside a `.py` or `.sh` file and run that file, and the checkpoint only sees "run a script". It cannot stop it. There is a record and a warning, and nothing more. For real isolation, use a container.
+It can block a command-level deletion (`DST-01`, critical, blocked on the spot). But **it does not parse what a script does**. Put the deletion inside a `.py` or `.sh` file and run that file, and the checkpoint only sees "run a script". It cannot stop it. There is a record and a warning, and nothing more. For real isolation, use a container.
 
 ## I am not a programmer. Can I use it
 

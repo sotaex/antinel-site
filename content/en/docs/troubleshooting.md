@@ -36,7 +36,7 @@ If all three pass and it still does not fire, read on.
 | Heartbeat days is 0 | the checkpoint is not on duty | restart the host |
 | `policy_changed` lands on a sidecar | the policy change did not reach the main chain, but the record is still there | run `antinel verify` to see the whole |
 
-"Block count goes to zero but the tool is running" is the one to watch most closely: it is not "no violations", it is "cannot block". Use the enforcement probe to tell those two apart — a passing probe means the checkpoint is capable of blocking. A failing one means the host is not calling it.
+"Block count goes to zero but the tool is running" is the one to watch most closely. That is not "no violations". It is "cannot block". Use the enforcement probe to tell those two apart — a passing probe means the checkpoint is capable of blocking. A failing one means the host is not calling it.
 
 ## Installed, but audit only and no blocking
 
@@ -48,7 +48,7 @@ In that state you can use: recording, checkup, inventory, ledger. You cannot use
 
 One checkpoint call costs about {{facts.F-004.value.p50_ms}} milliseconds, and most of that is the cost of starting the Python interpreter. A default install starts no resident process, and it does not scan the whole disk.
 
-If it feels slow, confirm that number first — use `antinel digest --days 1` to see whether any single call was unusually long. If it is a slow interpreter start (cold start, antivirus real-time scanning, a Python on a network drive), that is not ours, but it does stack.
+If it feels slow, confirm that number first — use `antinel digest --days 1` to see whether any single call was unusually long. If it is a slow interpreter start (cold start, antivirus real-time scanning, a Python on a network drive), that is not ours. It does stack, though.
 
 ## The audit chain reports an error
 
@@ -61,11 +61,11 @@ There are two kinds of error:
 - **One day's file is broken**: that day's records were changed or truncated. The chain points at the entry from which nothing matches.
 - **A missing file**: a date is missing in between. Copying a machine, or an accidental delete during cleanup, both cause this.
 
-In neither case should you "fix it to make it go green" — the value of the chain is precisely that it will not lie to look good. Keep the evidence, build a new stretch of chain, and write the break point down clearly.
+In neither case should you "fix it to make it go green". The value of the chain is precisely that it will not lie to look good. Keep the evidence, build a new stretch of chain, and write the break point down clearly.
 
 ## The disk is full
 
-The audit chain has three gates: days, size, free space. Before it fills up it clears the oldest day to make room, stops once it has cleared enough, does not delete today, and records what it deleted.
+The audit chain has three gates: days, size, free space. Before it fills up it clears the oldest day to make room. It stops once it has cleared enough, does not delete today, and records what it deleted.
 
 If you really have to clear it by hand, delete a whole date file. Do not edit file content — editing content is tampering.
 

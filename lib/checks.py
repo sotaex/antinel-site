@@ -31,6 +31,105 @@ def _strip_tags(h):
     return re.sub(r"<[^>]+>", "", h)
 
 
+# ---------------------------------------------------------------- 语言口径
+# 依据 ASD-STE100：程序句 ≤20 词，描述句 ≤25 词；中文按字数对齐。
+# 分两层，两层都报数：
+#   J-31 硬上限（中文 70 字 / 英文 35 词）必须是 0；
+#   J-32 存量（中文 50 字 / 英文 25 词）只许降不许升。
+# 量的是 <main> 里的可见正文。代码块与表格不算：那是引用与枚举，不是行文。
+# 链接文字算、网址不算（网址算进去量的是排版，不是句子）。
+LONG_LIMIT = {"zh": 70, "en": 35}
+BUDGET_LIMIT = {"zh": 50, "en": 25}
+#: 存量封顶。2026-10-29 清零后这两个数就是 0，含义变成「一句都不许超」。
+BUDGET_MAX = {"zh": 0, "en": 0}
+#: 被动候选封顶（启发式，见 _PASSIVE_EN）。只许降。
+#: 2026-10-29 实测 136（限定被动，不含 must be checked 这类不定式），
+#: 改掉 10 处施动者本可写明的句子后到 126。这不是缺陷清单：
+#: 「录音没被删」这类句子施动者不重要，被动是对的。这条线守的是不再增长。
+PASSIVE_MAX = 126
+
+#: 英文被动：**限定动词**被动（is/are/was/were/get + 过去分词）。
+#: 不算 `be` / `been` / `being` —— 那是「must be checked」「can be stopped」
+#: 这类不定式与完成体，语法上是被动，但句子里施动者并不含糊，
+#: 算进来只会让候选数翻倍（第一版实测：184 条里一半是这一类）。
+#: 副词夹在中间也算（is not written）。
+_PASSIVE_EN = re.compile(
+    r"\b(?:is|are|was|were|get|gets|got)\s+"
+    r"(?:not\s+|also\s+|still\s+|only\s+|never\s+|always\s+)?"
+    r"[a-z]+(?:ed|en)\b", re.I)
+#: 中文不进判据。「被」在汉语里兼表遭受（「被问到」「被算出来」），
+#: 全数当错误会逼着把自然句子改坏；这一层的含糊靠人工审。
+_PASSIVE_ZH = None
+
+
+def _page_text(page):
+    """<main> 里的可见正文：去代码块、去表格，块级标签收尾补换行。
+
+    ★ 块级标签收尾必须补分隔符。不补的话 `<h2>标题</h2><p>正文…。` 被
+      `_strip_tags` 连成一句「标题正文」，标题和每条列表项都被算进句子长度。
+      第一版就是这么虚报了 75 处——量到的是 HTML 块结构，不是句子。
+    """
+    m = re.search(r'<main id="main"[^>]*>(.*?)</main>', page["html"], re.S)
+    body = m.group(1) if m else page.get("content", "")
+    body = re.sub(r"<(code|pre)[^>]*>.*?</\1>", " ", body, flags=re.S)
+    body = re.sub(r"<table[^>]*>.*?</table>", " ", body, flags=re.S)
+    body = re.sub(r"</(?:p|h[1-6]|li|div|td|th|tr|blockquote|dd|dt|section)>",
+                  "\n", body)
+    body = re.sub(r"<br\s*/?>", "\n", body)
+    return _strip_tags(body)
+
+
+def page_sentences(page):
+    """把一页切成 (句子, 计数) 列表。计数：英文按词，中文按字（不计空白）。"""
+    lang = "en" if page["lang"] == "en" else "zh"
+    txt = _page_text(page)
+    if lang == "en":
+        parts = re.split(r"(?<=[.!?])\s+|\n", txt)
+    else:
+        parts = re.split(r"[。！？\n]", txt)
+    out = []
+    for s in parts:
+        s = s.strip()
+        if not s:
+            continue
+        n = len(s.split()) if lang == "en" else len(re.sub(r"\s+", "", s))
+        out.append((s, n))
+    return out
+
+
+def lang_stats(pages):
+    """句长与被动语态的完整读数。判据与 tests/lang_report.py 共用这一处。
+
+    规则页不进这条判据。那一页是从 rules/default.json 的字段直出的
+    （类别／级别／触发情形／处置建议），字段之间没有句末标点，整页会被
+    连成一句「252 字」。那不是句子长，是模板没有句子——拿句长判据去量它，
+    量到的是排版。第一次跑实测：121 处里 118 处是这一种。
+    英文镜像在 /en/rules/，所以按「路径里有没有 /rules」判，不按前缀。
+    """
+    hard, over = [], {"zh": 0, "en": 0}
+    long_sentences, passive = [], []
+    for p in pages:
+        if "/rules" in p["path"]:
+            continue
+        lang = "en" if p["lang"] == "en" else "zh"
+        for s, n in page_sentences(p):
+            if n > LONG_LIMIT[lang]:
+                hard.append("%s（%d）" % (p["path"], n))
+            elif n > BUDGET_LIMIT[lang]:
+                over[lang] += 1
+                long_sentences.append((p["path"], lang, s, n))
+            rx = _PASSIVE_EN if lang == "en" else _PASSIVE_ZH
+            for m in (rx.finditer(s) if rx else ()):
+                passive.append((p["path"], lang, m.group(0).strip(), s))
+    return {
+        "hard": hard, "over": over,
+        "long": sorted(long_sentences, key=lambda x: -x[3]),
+        "passive": passive,
+        "passive_en": sum(1 for x in passive if x[1] == "en"),
+        "passive_zh": sum(1 for x in passive if x[1] == "zh"),
+    }
+
+
 #: 版本号形状。**不许再写成 `0\.5\d\.\d`** —— 那样只认某一族，产品一换族
 #: 判据就静默失明（2026-10-29 实测：产品到 0.60 后，注入 0.60.1 与 0.61.0
 #: 都报「异版本 0 处」）。前后加保护，避免把 127.0.0.1 里的 `0.0.1` 当成版本。
@@ -600,62 +699,22 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
         add("J-30", not dup, "跨页重复长句 %d%s"
             % (len(dup), ("：" + "；".join(dup[:3])) if dup else ""))
 
-    # ---- 语言：句长（J-31 / J-32）----
-    # 依据 ASD-STE100：程序句 ≤20 词，描述句 ≤25 词；中文按字数对齐。
-    # 本站现状达不到 25 词，所以分两层，两层都报数：
-    #   J-31 硬上限（中文 70 字 / 英文 35 词）必须是 0 — 超了当场红；
-    #   J-32 存量预算（中文 50 字 / 英文 25 词）只许降不许升。
-    #       它红不了，但每次构建都把「离 STE 还有多少句」印出来 —
-    #       存量不印出来，就等于宣称已经合规。
-    # 量的是 <main> 里的可见正文。代码块与表格不算：那是引用与枚举，不是行文。
-    # 链接文字算、网址不算（网址算进去量的是排版，不是句子）。
-    _LONG = {"zh": 70, "en": 35}          # 硬上限
-    _BUDGET = {"zh": 50, "en": 25}        # 存量线
-    # 存量封顶：只许往下调。英文这一档 2026-10-29 记的是 48，不是 45——
-    # 45 是英文括号缺前导空格时数出来的：`verdicts(the …` 粘成一个词，
-    # 每条术语注解都少算一个词。中文 29 不受影响（中文括号本来不加空格）。
-    # 记真实值，不记好看的值：这条线的作用是把「还差多少」摆出来，不是自我表扬。
-    _BUDGET_MAX = {"zh": 29, "en": 48}
-    hard, over = [], {"zh": 0, "en": 0}
-    for p in pages:
-        # 规则页不进这条判据。那一页是从 rules/default.json 的字段直出的
-        # （类别／级别／触发情形／处置建议），字段之间没有句末标点，整页会被
-        # 连成一句「252 字」。那不是句子长，是模板没有句子——拿句长判据去量它，
-        # 量到的是排版。第一次跑实测：121 处里 118 处是这一种。
-        # 英文镜像在 /en/rules/，所以按「路径里有没有 /rules」判，不按前缀。
-        if "/rules" in p["path"]:
-            continue
-        m = re.search(r'<main id="main"[^>]*>(.*?)</main>', p["html"], re.S)
-        body = m.group(1) if m else p["content"]
-        body = re.sub(r"<(code|pre)[^>]*>.*?</\1>", " ", body, flags=re.S)
-        body = re.sub(r"<table[^>]*>.*?</table>", " ", body, flags=re.S)
-        # ★ 块级标签收尾处要补分隔符。不补的话 `<h2>标题</h2><p>正文…。` 被
-        #   `_strip_tags` 连成一句「标题正文」，标题和每一条列表项都会被算进句子长度。
-        #   第一版就是这么虚报了 75 处——量到的是 HTML 块结构，不是句子。
-        body = re.sub(r"</(?:p|h[1-6]|li|div|td|th|tr|blockquote|dd|dt|section)>",
-                      "\n", body)
-        body = re.sub(r"<br\s*/?>", "\n", body)
-        txt = _strip_tags(body)
-        lang = "en" if p["lang"] == "en" else "zh"
-        if lang == "en":
-            parts = re.split(r"(?<=[.!?])\s+|\n", txt)
-        else:
-            parts = re.split(r"[。！？\n]", txt)
-        for s in parts:
-            s = s.strip()
-            if not s:
-                continue
-            n = len(s.split()) if lang == "en" else len(re.sub(r"\s+", "", s))
-            if n > _LONG[lang]:
-                hard.append("%s（%d）" % (p["path"], n))
-            elif n > _BUDGET[lang]:
-                over[lang] += 1
-    add("J-31", not hard, "超长句 %d 处（上限 中文 %d 字／英文 %d 词）%s"
-        % (len(hard), _LONG["zh"], _LONG["en"],
-           ("：" + "、".join(hard[:4])) if hard else ""))
-    add("J-32", over["zh"] <= _BUDGET_MAX["zh"] and over["en"] <= _BUDGET_MAX["en"],
+    # ---- 语言：句长与被动（J-31 / J-32 / J-34）----
+    # 口径见模块顶部的 lang_stats()：判据与审查工具共用同一实现，
+    # 不再在判据里内联一份——内联的那份探针看不见，改了也量不到。
+    st = lang_stats(pages)
+    add("J-31", not st["hard"], "超长句 %d 处（上限 中文 %d 字／英文 %d 词）%s"
+        % (len(st["hard"]), LONG_LIMIT["zh"], LONG_LIMIT["en"],
+           ("：" + "、".join(st["hard"][:4])) if st["hard"] else ""))
+    add("J-32", st["over"]["zh"] <= BUDGET_MAX["zh"] and st["over"]["en"] <= BUDGET_MAX["en"],
         "长句存量 中文 %d／%d、英文 %d／%d（超了就是新长出来的）"
-        % (over["zh"], _BUDGET_MAX["zh"], over["en"], _BUDGET_MAX["en"]))
+        % (st["over"]["zh"], BUDGET_MAX["zh"], st["over"]["en"], BUDGET_MAX["en"]))
+    # J-34 被动语态存量。STE100 不禁止被动，但要求「谁做的」说得出来。
+    # 这一条只做存量 ratchet：候选数只许降。它红不了，但它把「还剩多少句
+    # 没写施动者」摆出来——被动语态是本站最常见的一类含糊。
+    add("J-34", len(st["passive"]) <= PASSIVE_MAX,
+        "被动候选 英文 %d／%d、中文 %d（启发式：只许降）"
+        % (st["passive_en"], PASSIVE_MAX, st["passive_zh"]))
 
     # J-33 括号不许把一个词切成两半
     # 术语解释是渲染时插进句子中间的（lib/md.py 的 explain_first）。插错位置，
@@ -674,6 +733,33 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
             broken.append("%s（…%s）" % (p["path"], mm.group(1)))
     add("J-33", not broken, "括号切开单词 %d 处%s"
         % (len(broken), ("：" + "、".join(broken[:4])) if broken else ""))
+
+    # J-35 事实的取数方式必须写在页面上
+    # F-004 / F-005 / F-006 曾经是写死在 gen.py 里的三个字面量，evidence 指向
+    # README 或 THREAT_MODEL.md。那是「文档这么说」，不是「我们量过」——
+    # 两者在页面上长得一模一样，读者无从分辨，而且不会有任何检查变红。
+    # 现在这三条从快照的 measured 块取数。这一条不要求每件事都能测
+    # （时延就测不了：夹具形状下的读数不作数），它守的是**标注纪律**：
+    #   ① 每一节必须写清是「实测」还是「声明」，两个都不写就是含糊；
+    #   ② 指向 .md 文档的那一节必须同时写了「声明」——
+    #      文档可以是声明的出处，不能冒充测量记录。
+    # 只查 /facts/ 与 /en/facts/：这两页是事实的权威清单，别处的转述不算。
+    bad35 = []
+    for p in pages:
+        if p["path"] not in ("/facts/", "/en/facts/"):
+            continue
+        for cid in ("F-004", "F-005", "F-006"):
+            m = re.search(r'<h2 id="%s".*?</p>' % cid.lower(), p["html"], re.S)
+            if not m:
+                bad35.append("%s 缺 %s 一节" % (p["path"], cid))
+                continue
+            seg = _strip_tags(m.group(0))
+            if "实测" not in seg and "声明" not in seg:
+                bad35.append("%s/%s 没说清是实测还是声明" % (p["path"], cid))
+            if re.search(r"\.md\b", seg) and "声明" not in seg:
+                bad35.append("%s/%s 指向文档却没标声明" % (p["path"], cid))
+    add("J-35", not bad35, "事实取数方式没写清 %d 处%s"
+        % (len(bad35), ("：" + "；".join(bad35[:4])) if bad35 else ""))
 
     # ---- J-16 英文镜像 ----
     # 三条一起查，缺一条镜像就是坏的：

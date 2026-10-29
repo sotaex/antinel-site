@@ -15,7 +15,7 @@ In one line: completeness does not ask "how many bad things are there in the wor
 
 A list of threats never ends. Features are open-ended, and so are the ways to break them: seventeen today, an eighteenth tomorrow.
 
-But **carriers are a closed set**. The ways a process can fail are limited by the finite kinds of resource it can consume and depend on: time, disk, memory, permissions, input, locks, version, environment. Plus one thing that is not in the program but breaks systems just the same — people.
+But **carriers are a closed set**. The ways a process can fail are limited by the finite kinds of resource it can consume. Those resources are: time, disk, memory, permissions, input, locks, version, environment. Plus one thing that is not in the program but breaks systems just the same — people.
 
 So completeness can only be defined on the carrier dimension. Forty cells are not forty points. They record that all eight directions were asked.
 
@@ -40,7 +40,7 @@ Four marks, with fixed meanings:
 
 Of the forty cells: **✔ 29 / ◐ 10 / ✘ 1 / unverified 0**.
 
-The one remaining ✘ is "people · stop" — a person kills the process, edits the file, dismisses the dialog, and no program can stop them. This cell will not become ✔. It will stay "an acceptance we wrote down". We chose to put it on paper rather than pretend it is not there.
+The one remaining ✘ is "people · stop". A person can kill the process, edit the file or dismiss the dialog. No program can stop them. This cell will not become ✔. It will stay "an acceptance we wrote down". We chose to put it on paper rather than pretend it is not there.
 
 ## The eight carriers
 
@@ -57,9 +57,9 @@ The one remaining ✘ is "people · stop" — a person kills the process, edits 
 
 ## A few cells worth looking at
 
-**Time · Judge**: when the clock has been changed, it has to be able to say "cannot compute how long it was on duty", not compute a negative number and treat that as normal. The rule has one implementation: a negative number is always read as "cannot compute".
+**Time · Judge**: when the clock has been changed, it has to be able to say "cannot compute how long it was on duty". It must not compute a negative number and treat that as normal. The rule has one implementation: a negative number is always read as "cannot compute".
 
-**Space · Stop**: the audit chain has three gates (days, size, free space). Before it fills up it clears the oldest day to make room, stops once it has cleared enough, does not delete today, and records what it deleted. A full disk is not "a failed write". It is "a planned degradation".
+**Space · Stop**: the audit chain has three gates (days, size, free space). Before it fills up it clears the oldest day to make room. It stops once it has cleared enough, does not delete today, and records what it deleted. A full disk is not "a failed write". It is "a planned degradation".
 
 **Version · Judge**: a package older than the source disguises "not registered" as "shipped with the package". So verification has to rename the build leftovers out of the way first and then rebuild. We have stepped on this one.
 
@@ -73,6 +73,6 @@ We publish this matrix so that the word "complete" has a boundary: **saying comp
 
 ## Where the evidence is
 
-The evidence for each cell (the check name, the probe name, the measurement record) is listed cell by cell in the matrix document in the product repository, and it follows the version. This page gives the method and the conclusion. It does not repeat that big table — two tables in two places fall silently out of step, so we keep one.
+The evidence for each cell is listed cell by cell in the matrix document in the product repository. Each cell names its check, its probe and its measurement record. That document follows the version. This page gives the method and the conclusion. It does not repeat that big table — two tables in two places fall silently out of step, so we keep one.
 
 Ships with its own proof: {{facts.F-007.value.assertions}} assertions pass, {{facts.F-007.value.digests}} digests match. For how to re-compute it, see [audit chain and re-runs](/en/audit/).

@@ -9,7 +9,7 @@ audience: human
 
 # The checkup
 
-In one line: one command, one click in this computer's browser, and you know whether the AI tools on this machine took anything of yours away. Read-only, no network, and the result does not leave the machine.
+In one line: one command, one click in this computer's browser. Then you know whether the AI tools on this machine took anything of yours away. Read-only, no network, and the result does not leave the machine.
 
 ## Three entry points, by how much patience you have
 
@@ -23,13 +23,13 @@ The page and the command line read the same evidence. There is no case of "the p
 
 ## What the checkup page does
 
-`antinel ui` starts a local page on this machine. Open it in a browser and click "start check". It goes through the AI tools on this machine one by one looking for traces of a transfer, and translates the result into the six verdicts.
+`antinel ui` starts a local page on this machine. Open it in a browser and click "start check". It goes through the AI tools on this machine one by one. It looks for traces of a transfer and translates the result into the six verdicts.
 
 Three properties, better written here than buried in a document:
 
 - **Read-only**: it does not change your files and does not touch tool settings.
 - **It locks nothing**: no folder is locked.
-- **It does not leave the machine**: the page is served locally and the result is not sent out.
+- **It does not leave the machine**: this machine serves the page, and the result is not sent out.
 
 ## How to read the six verdicts
 
@@ -81,7 +81,7 @@ antinel brief
 
 After these five you hold: a clickable page, a whole-machine inventory, a record of today's actions, the current outbound ledger, and a one-page conclusion.
 
-To keep it on file, save the `ui` page as a PDF. The page is designed to be screenshotted.
+To keep it on file, save the `ui` page as a PDF. You can screenshot the page.
 
 ## Limits
 

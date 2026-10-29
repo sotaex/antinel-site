@@ -13,9 +13,9 @@ In one line: the four gates are not four categories. They are four checkpoints. 
 
 ## Categories answer "what it covers". Gates answer "where in the flow it is asked"
 
-Rules are sorted into categories (secrets, destructive, network, injection and so on) and they pass through gates. These are two independent coordinates:
+Rules fall into categories (secrets, destructive, network, injection and so on) and they pass through gates. These are two independent coordinates:
 
-- **Category**: which kind of risk this rule cares about. Rules in one category are written in a similar style.
+- **Category**: which kind of risk this rule cares about. Rules in one category share a similar style.
 - **Gate**: at which step of the flow this rule gets asked. Rules in one gate share one way of being handled.
 
 The payoff of keeping them apart: a new rule only has to hang off an existing gate and category. The handling does not have to be rewritten.
@@ -38,7 +38,7 @@ Two kinds of risk cross a step in the flow. One gate cannot hold them, so they a
 | Environment probing (CTX-01 enumerates every environment variable) | Gate 1／4 | reading an environment variable is visible at the content layer, but the damage shows up later in the outbound behaviour |
 | MCP supply chain (MCP-01…MCP-04, SLOP-01) | Gate 2／3 | a plaintext key in a config file belongs to the sensitive surface; a poisoned tool description and a remote server belong to metadata and outbound |
 
-The crossing is **registered in the rules file**. It is not decided on the spot on a web page. The table on this page is read out of the `gates` field of the rules file at build time.
+We **register the crossing in the rules file**. We do not decide it on the spot on a web page. The table on this page is read out of the `gates` field of the rules file at build time.
 
 ## There are only two levels of handling
 
@@ -52,7 +52,7 @@ The line between the two levels is drawn by "can this be undone afterwards". A p
 
 We do not keep a second table for gate membership.
 
-The `gates` field in `rules/default.json` is the only source of truth. Every gate number shown on a rule page is parsed out of it at build time. One check watches this during the build: if any page shows a gate number that disagrees with the rules file, the build fails.
+The `gates` field in `rules/default.json` is the only source of truth. At build time the build reads the gate number of every rule page out of it. One check watches this during the build: if any page shows a gate number that disagrees with the rules file, the build fails.
 
 We do it this way because "the same fact in two places" is an error that does not raise. It falls silently behind. The page says Gate 3; the rules file was changed to Gate 4 weeks ago. Both open fine. Nobody notices.
 

@@ -88,7 +88,7 @@ To find out whether the code got taken out, plant a canary:
 antinel canary plant
 ```
 
-Then work as normal. If the mark shows up in a tool's output or in the content of an upload, that is evidence of a transfer out, and you can see it in the canaries count of `antinel report`.
+Then work as normal. If the mark shows up in a tool's output or in the content of an upload, that is evidence of a transfer out. You can see it in the canaries count of `antinel report`.
 
 ## Three commands for every day
 

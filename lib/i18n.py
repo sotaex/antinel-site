@@ -26,6 +26,7 @@ SHELL = {
         ],
         "skip": "跳到正文",
         "footer_links": [
+            ("/help/", "从哪开始"),
             ("/sample/", "一页纸样例"),
             ("/docs/", "文档"),
             ("/datasets/", "数据集"),
@@ -55,6 +56,7 @@ SHELL = {
         ],
         "skip": "Skip to content",
         "footer_links": [
+            ("/en/help/", "Where to start"),
             ("/en/sample/", "Sample report"),
             ("/en/docs/", "Docs"),
             ("/en/datasets/", "Datasets"),

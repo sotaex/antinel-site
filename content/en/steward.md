@@ -16,7 +16,7 @@ In one line: a steward does not write your content and does not make your decisi
 We do not use the word "sentry" in our public material. The reason is simple: a sentry only shouts, and then it walks away. A steward leaves a record.
 
 - Sentry: sees something odd → raises an alarm → done.
-- Steward: sees something odd → judges it against rules written down beforehand → acts on the spot → writes it into the record → you can re-compute the whole thing later.
+- Steward: sees something odd → judges it against rules written down beforehand → acts on the spot → writes it into the record. You can re-compute the whole thing later.
 
 An alarm with no record behind it cannot be shown to have happened the next day. Half the value of a steward is on the spot. The other half is afterwards.
 
@@ -33,7 +33,7 @@ Neither one covers for the other. Antivirus cannot stop "the agent read your key
 
 ## Where the word comes from
 
-The Chinese word 监理 carries an institutional meaning. Information-systems supervision has a mature body of practice behind it. It is the kind of work the GB/T 19668 family of standards describes. Four things define it: a third party, working to a contract and to written rules, answerable for the process rather than the outcome, producing records that can be checked.
+The Chinese word 监理 carries an institutional meaning. Information-systems supervision has a mature body of practice behind it. It is the kind of work the GB/T 19668 family of standards describes. Four things define it. It is a third party. It works to a contract and to written rules. It answers for the process rather than the outcome. It produces records that can be checked.
 
 Antinel borrows that way of working. It does not borrow a qualification:
 
@@ -53,7 +53,7 @@ There are three parties in a single AI tool call:
 
 The third point is the one that matters: a steward answers **to the principal, not to the supervised party**. So it cannot be played by the AI tool itself, and it cannot be played by whoever sold you the AI tool.
 
-That is also why it has to **run locally and stay off the network at run time**: a steward that reports to a cloud cannot answer to a local principal.
+That is also why it has to **run locally and stay off the network at run time**. A steward that reports to a cloud cannot answer to a local principal.
 
 ## Three rules we hold to
 
@@ -61,7 +61,7 @@ That is also why it has to **run locally and stay off the network at run time**:
 
 **Second, the bar is consistent.** The same call is blocked today and blocked tomorrow. The bar lives in the rules file, its version is checkable, and it does not change with the person.
 
-**Third, it is decoupled from payment.** The verdict does not depend on whether anyone paid. We take no "passage fee" and we sell no "verified" mark. A mark can only come out of a public rule judged by a machine.
+**Third, we keep it decoupled from payment.** The verdict does not depend on whether anyone paid. We take no "passage fee" and we sell no "verified" mark. A mark can only come out of a public rule judged by a machine.
 
 ## What it actually stops
 
@@ -69,6 +69,6 @@ Four gates and {{facts.F-001.value.rules}} rules: {{facts.F-002.value.critical}}
 
 ## The limits, stated here too
 
-A steward is a guard rail, not an isolation layer. It reads only the text of a tool call. It does not parse what a script does. Slip a dangerous action inside a `.py` file and run that file, and the steward has no way to stop it — there will be a record and a warning, and that is all. The complete honest list is in [threat model and limits](/en/threat-model/).
+A steward is a guard rail, not an isolation layer. It reads only the text of a tool call. It does not parse what a script does. Slip a dangerous action inside a `.py` file and run that file. The steward has no way to stop it. There will be a record and a warning, and that is all. The complete honest list is in [threat model and limits](/en/threat-model/).
 
 If you need real isolation, that is a container's job, not ours. If you need accountability and re-computation, that is a steward's. Neither one stands in for the other.

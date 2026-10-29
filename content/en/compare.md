@@ -34,7 +34,7 @@ The two do not replace each other. Your machine should have both antivirus and a
 
 A sandbox governs **range**: let it run in the box, and if it breaks the box, throw the box away. A steward governs **behaviour**: every call inside the box is recorded, and what should stop, stops.
 
-The sandbox's limit is "inside the box": it does not govern the actions inside. The steward's limit is "outside the box": it has no isolation capability. So the common combination is "container plus steward" — the container guarantees it cannot cross the line, the steward guarantees what happens inside the line can be accounted for.
+The sandbox's limit is "inside the box": it does not govern the actions inside. The steward's limit is "outside the box": it has no isolation capability. So the common combination is "container plus steward". The container guarantees it cannot cross the line. The steward guarantees what happens inside the line can be accounted for.
 
 ## Against DLP
 
@@ -44,7 +44,7 @@ A steward moves the decision point forward to the **call** layer: it does not lo
 
 ## Against SIEM
 
-SIEM aggregates and correlates logs, and its premise is **that logs exist first**. An AI tool does not necessarily give you logs: it may only write one field in its own directory, "last upload time", in a different format for every vendor.
+SIEM aggregates and correlates logs, and its premise is **that logs exist first**. An AI tool does not necessarily give you logs. It may only write one field in its own directory, "last upload time", in a different format for every vendor.
 
 What a steward does first is find those traces (see [the six mechanisms](/en/monitor/)), then translate them into one framing. SIEM is downstream. A steward is the upstream collection.
 
@@ -63,7 +63,7 @@ A steward is local, takes no network at run time, and uses the standard library 
 ## What we do not claim
 
 - We do not claim to be "the most complete": {{facts.F-001.value.rules}} rules is a countable set, not "everything covered".
-- We do not claim "zero false positives": the warning level contains entries that do misfire (hitting a strange domain during a package install is common), which is why it is designed as warn-and-allow.
+- We do not claim "zero false positives". The warning level contains entries that do misfire: hitting a strange domain during a package install is common. That is why it is designed as warn-and-allow.
 - We do not claim "passing means safe": ⚪ checked, no record found is not a clean bill, and ⚫ not checked is not "no problem". See [the six verdicts](/en/verdicts/).
 
 ## One line

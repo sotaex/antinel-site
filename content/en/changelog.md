@@ -15,7 +15,7 @@ In one line: the site and the numbers both change. This page records where they 
 
 Three kinds get recorded:
 
-1. **A fact changed**: a number that gets quoted — rule count, category count, host count, assertion count.
+1. **A fact changed**: a number that gets quoted. Rule count, category count, host count, assertion count.
 2. **A page changed**: a page added, a page removed, a structure change, a wording convention change.
 3. **A check changed**: a build-time check added, removed, or changed in how it judges.
 
@@ -39,15 +39,15 @@ The version number appears in that one place only. Each entry below records what
 | Severity split | 21 blocking／16 warning | 21 blocking／16 warning (unchanged) |
 | Host count | 24 kinds | 24 kinds (unchanged) |
 
-The counts did not move, but **what they watch did**. Compared with the previous sync, 11 of the 37 rules had their matching conditions revised: five in secret reads, three in destructive actions, and one each in context, injection and metadata. That is the net change between two syncs, not what any single release changed. Which files, which commands and which content features each one now watches is stated on [the rule index](/en/rules/). It is not copied here, because two copies drift.
+The counts did not move, but **what they watch did**. Compared with the previous sync, 11 of the 37 rules had their matching conditions revised. Five were in secret reads, three in destructive actions, and one each in context, injection and metadata. That is the net change between two syncs, not what any single release changed. Which files, which commands and which content features each one now watches is stated on [the rule index](/en/rules/). It is not copied here, because two copies drift.
 
 **Pages that changed**: this page was rewritten. The dated entries used to carry a live placeholder that the build filled with the current version. Every sync therefore rewrote the version number of the day the site went live: a record that edits itself. Dated entries now record what was true then and what changed relative to it. The current version sits in one place, above.
 
 One more fix. In the `antinel agent --json` example, the hook-registration version was hard-coded to a much older value. It is a placeholder now. The field table states plainly that it is a different number from the package version, and not guaranteed to match it.
 
-**Checks that changed**: the version-provenance check used to recognise only one shape of version number. Once the product moved to a new version family, the check could not see a wrong version from that family at all: writing the immediately preceding version into the text still produced "0 mismatched versions". It now accepts any version shape.
+**Checks that changed**: the version-provenance check used to recognise only one shape of version number. Once the product moved to a new version family, the check could not see a wrong version from that family at all. Writing the immediately preceding version into the text still produced "0 mismatched versions". It now accepts any version shape.
 
-While adding the counter-example, two siblings of the same defect surfaced. Code samples were skipped wholesale, so an old version written inside an example (the one fixed just above) was never checked at all. The pattern's tail also excluded a full stop, so the most natural English phrasing — a version at the end of a sentence — never matched. Both now have counter-examples, so this one check is held in place by three: body text, code block, sentence end.
+While adding the counter-example, two siblings of the same defect surfaced. Code samples were skipped wholesale, so an old version written inside an example (the one fixed just above) was never checked at all. The pattern's tail also excluded a full stop. The most natural English phrasing puts a version at the end of a sentence, and that never matched. Both now have counter-examples, so this one check is held in place by three: body text, code block, sentence end.
 
 One last gap was closed too. Of the 30 checks, only the input-count self-check had no counter-example. There are 35 counter-examples now, matching all 30 one by one.
 
@@ -75,6 +75,31 @@ The second is the English term note. A human page adds a short explanation the f
 
 That takes the checks from 30 to 33 and the counter-examples from 35 to 38.
 
+## 2026-10-29 · fifth sync
+
+**How we get the numbers changed. The numbers did not.** Two facts used to be literals in the build script, with a document as their source. Now each one says how we got it, so a reader can tell which number we measured and which one someone else stated.
+
+| Item | Before | Now |
+|---|---|---|
+| Standard-library surface (F-005) | hard-coded "yes" | measured: 81 run-time files scanned against the standard-library list, 0 external dependencies |
+| Scoring weights (F-006) | hard-coded 20 and 5 | measured: parsed out of the scoring implementation, with the line number |
+| Call latency (F-004) | hard-coded 65 ms, pointing at a document | relabelled "stated, not re-measured here", with the reason |
+
+The latency item needs a word. This site tried end-to-end timing inside an isolated directory and got about three seconds. That is not the product being slow. It is the shape of the fixture: a temporary directory is not a git repository, so the call takes a timeout path. Swapping the documented 65 ms for that reading would trade one doubtful number for another. The number stays and the label changes.
+
+**Pages that changed**: a new page, [Where to start](/en/help/). It routes you by situation. It also gives each of the five most common places to get stuck a destination.
+
+**Language changed**: long sentences are gone. Chinese sentences over 50 characters went from 29 to 0. English sentences over 25 words went from 48 to 0. The fix was splitting, not deleting. The term notes got shorter too. The build inserts them into the middle of a sentence, so a long note makes a long sentence that the writer never sees.
+
+The passive voice did not go to zero, and should not. In English, a sentence about a record that nobody deleted needs no actor. We rewrote ten sentences where the actor was knowable. One example: a sentence about the page being built for screenshots now reads "you can screenshot the page". The count stands at 126, and it may only go down.
+
+**Checks that changed**: two new ones.
+
+- **Passive-voice count**: finite-verb passives in English (not infinitives such as "must be checked") total 126, and may only go down. It cannot go red, but every build prints the number.
+- **A fact must say how we got it**: on the facts page, each of F-004, F-005 and F-006 must say "measured" or "stated". A section that points at a `.md` document must also say "stated". A document can be the source of a statement. It is not a stand-in for a measurement.
+
+That takes the checks from 33 to 34 and the counter-examples from 38 to 40.
+
 ## 2026-10-24 · the site goes live
 
 First release of the site. Two things were done structurally:
@@ -99,7 +124,7 @@ Dataset file names carry the version, which makes reconciliation easy:
 /datasets/verdicts.json
 ```
 
-The version in a file name is the version that build read. The live site only carries the set produced by the current build — the previous version's address is overwritten, so download and keep it yourself if you need it (the licence allows that).
+The version in a file name is the version that build read. The live site only carries the set produced by the current build. The previous version's address is overwritten, so download and keep it yourself if you need it (the licence allows that).
 
 The product's own change record is in the commit history of the `sotaex/agentstate` repository — that is the source of truth for the facts. This site is its readable presentation.
 

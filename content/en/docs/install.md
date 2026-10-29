@@ -52,7 +52,7 @@ There is one verification point: `"installed": true`. An agent saying "it is ins
 
 ## Several hosts on one machine
 
-When there are several AI tools on one machine, have the agent report which host it is in, so the records land in the right place:
+When there are several AI tools on one machine, have the agent report which host it is in. Then the records land in the right place:
 
 ```
 antinel --host zcode agent --json
@@ -74,7 +74,7 @@ You can fill in `workbuddy`, `zcode`, `qoder` or `claude-code`. If it does not r
 
 The first-version platform is Windows. The hosts verified to block for real are Claude Code, ZCode and Qoder. **The rest install into audit-and-scan mode** — they still record and can still be checked up, they just cannot block.
 
-This is not a failed install. `antinel install` says plainly which mode the current host is in. If the host you want is not one of the three above, use it in audit mode for now and wait for us to adapt the blocking.
+This is not a failed install. `antinel install` says plainly which mode the current host is in. If the host you want is not one of the three above, use it in audit mode for now. Wait for us to adapt the blocking.
 
 ## Next step
 

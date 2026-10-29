@@ -1,9 +1,9 @@
 {
   "schema": "antinel-site-negctl/1",
-  "ran": 38,
-  "total": 38,
-  "pass": 38,
-  "baseline_criteria": 33,
+  "ran": 40,
+  "total": 40,
+  "pass": 40,
+  "baseline_criteria": 35,
   "note": "每条三步：基线全绿 → 注入后目标判据变红 → 还原后全绿",
   "details": [
     {
@@ -24,7 +24,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "H1=1 组=0 链接=26 死链=0 字节=4509（部署后 4847）"
+      "detail": "H1=1 组=0 链接=26 死链=0 字节=4501（部署后 4839）"
     },
     {
       "id": "N-03",
@@ -34,7 +34,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "页 128，异常 128：/(缺link)、/facts/(缺link)、/rules/(缺link)"
+      "detail": "页 130，异常 130：/(缺link)、/facts/(缺link)、/rules/(缺link)"
     },
     {
       "id": "N-04",
@@ -74,7 +74,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "sitemap 129 条，页 128 条，差 1"
+      "detail": "sitemap 131 条，页 130 条，差 1"
     },
     {
       "id": "N-08",
@@ -84,7 +84,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 128：/(front-matter 缺字段)、/facts/(front-matter 缺字段)、/rules/(front-matter 缺字段)"
+      "detail": "异常 130：/(front-matter 缺字段)、/facts/(front-matter 缺字段)、/rules/(front-matter 缺字段)"
     },
     {
       "id": "N-09",
@@ -94,7 +94,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 122：/facts/(@type=Thing)、/rules/(@type=Thing)、/rules/sec-01/(@type=Thing)"
+      "detail": "异常 124：/facts/(@type=Thing)、/rules/(@type=Thing)、/rules/sec-01/(@type=Thing)"
     },
     {
       "id": "N-10",
@@ -114,7 +114,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 128：/ 缺 sha256:b71e5、/facts/ 缺 sha256:b71e5、/rules/ 缺 sha256:b71e5"
+      "detail": "异常 130：/ 缺 sha256:b71e5、/facts/ 缺 sha256:b71e5、/rules/ 缺 sha256:b71e5"
     },
     {
       "id": "N-12",
@@ -144,7 +144,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "254 KB｜段 127／页 128｜头部说明 6 行"
+      "detail": "263 KB｜段 129／页 130｜头部说明 6 行"
     },
     {
       "id": "N-15",
@@ -294,7 +294,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "镜像 中 64／英 63｜缺对应 中 1 英 0｜lang 错 0｜数字跨语言冲突 0"
+      "detail": "镜像 中 65／英 64｜缺对应 中 1 英 0｜lang 错 0｜数字跨语言冲突 0"
     },
     {
       "id": "N-30",
@@ -304,7 +304,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "镜像 中 64／英 64｜缺对应 中 0 英 0｜lang 错 0｜数字跨语言冲突 1"
+      "detail": "镜像 中 65／英 65｜缺对应 中 0 英 0｜lang 错 0｜数字跨语言冲突 1"
     },
     {
       "id": "N-31",
@@ -354,7 +354,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "页 54／事实 12／规则 0／llms 2652 字节"
+      "detail": "页 56／事实 12／规则 0／llms 2648 字节"
     },
     {
       "id": "N-36",
@@ -374,7 +374,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "长句存量 中文 30／29、英文 48／48（超了就是新长出来的）"
+      "detail": "长句存量 中文 1／0、英文 0／0（超了就是新长出来的）"
     },
     {
       "id": "N-38",
@@ -384,7 +384,27 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "括号切开单词 8 处：/en/monitor/（…s）、/en/monitor/（…s）、/en/checkup/（…s）、/en/completeness/（…s）"
+      "detail": "括号切开单词 10 处：/en/help/（…s）、/en/help/（…s）、/en/monitor/（…s）、/en/monitor/（…s）"
+    },
+    {
+      "id": "N-39",
+      "criterion": "J-35",
+      "desc": "事实页的 evidence 不再标注实测／声明",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "事实取数方式没写清 2 处：/facts//F-006 没说清是实测还是声明；/en/facts//F-006 没说清是实测还是声明"
+    },
+    {
+      "id": "N-40",
+      "criterion": "J-34",
+      "desc": "英文页多一句限定被动（存量只许降）",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "被动候选 英文 127／126、中文 0（启发式：只许降）"
     }
   ]
 }

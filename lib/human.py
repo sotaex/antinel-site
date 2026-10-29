@@ -96,20 +96,20 @@ VERDICT_WHY_EN = ("Why we say \"it recorded\": we read the records the tool wrot
 # ---------------------------------------------------------------- 术语表
 # 键＝旧说法（也是 J-24 的黑名单），值＝首次出现时给的那句解释
 TERMS = {
-    "宿主": "你电脑上那些 AI 工具，比如 Claude Code、Cursor",
-    "钩子": "装进 AI 工具里的检查点，每次调用先过它",
-    "审计链": "只加不改的流水账，改一个字节都能算出来",
-    "判据": "机器自动执行的检查",
+    "宿主": "你电脑上的 AI 工具",
+    "钩子": "工具每次调用前先过的检查点",
+    "审计链": "只加不改的流水账",
+    "判据": "机器执行的检查",
     "口径": "按什么标准算",
     "复跑": "你自己再算一遍",
     "闸门": "关卡",
     "护盾规则": "检查规则",
     "裁决": "结论",
-    "金丝雀": "埋一个假文件当诱饵，谁读它谁暴露",
+    "金丝雀": "埋一个假文件当诱饵",
     "安全区": "划一块地，管得更严",
     "出口账本": "谁在往外连",
     "门闸": "在往外传的那一步拦住",
-    "完备矩阵": "四十个「这类问题查过没有」的格子",
+    "完备矩阵": "四十个格子，逐格问查过没有",
     "证据键": "工具记下的字段名",
     "锚点": "定位点",
     "fail-open": "记不下来的时候先放行，并且告诉你",
@@ -122,16 +122,16 @@ TERMS = {
 # 为什么不能只查中文表：英文页若不进这套判据，就等于人读层只约束中文站，
 # 镜像页可以随便写——那正是「镜像」最容易烂掉的地方。
 TERMS_EN = {
-    "host": "an AI tool that runs on your machine, such as Claude Code or Cursor",
-    "hook": "a checkpoint installed inside an AI tool; every call passes through it first",
-    "audit chain": "an append-only log; change one byte and it shows",
-    "canary file": "a decoy file planted on purpose; whoever reads it gives itself away",
-    "safe zone": "a folder you mark for stricter checks",
+    "host": "an AI tool on your machine",
+    "hook": "a checkpoint every call passes through",
+    "audit chain": "an append-only log",
+    "canary file": "a decoy file planted on purpose",
+    "safe zone": "a folder under stricter checks",
     "egress ledger": "the log of who connects outbound",
-    "verdict": "the one conclusion a tool gets after a check",
-    "re-run": "run the same check yourself and compare",
-    "fail-open": "when it cannot record, it lets the action through and tells you",
-    "evidence key": "a field name the tool itself wrote down",
+    "verdict": "the one conclusion after a check",
+    "re-run": "run the same check yourself",
+    "fail-open": "when it cannot record, it lets the call through",
+    "evidence key": "a field the tool itself wrote",
 }
 # 为什么这张表比中文的 TERMS 短，且不含 "steward" 和 "gate"：
 # 1. "steward" 是产品概念，有自己的页面（/en/steward/），跟中文表不收录「监理」同理。
@@ -200,10 +200,10 @@ WORDS = [
 # 英文镜像同题同标准——/en/ 下的同一批页一并进清单。
 # 为什么必须进：镜像页最容易烂，因为「那是翻译，差不多就行」。
 # 不进清单，J-24～J-30 就只管中文站，英文页堆术语、写营销词、缺边界段全放过。
-HUMAN_PAGES = ["/", "/why/", "/sample/", "/steward/", "/gates/", "/monitor/",
+HUMAN_PAGES = ["/", "/help/", "/why/", "/sample/", "/steward/", "/gates/", "/monitor/",
                "/checkup/", "/threat-model/", "/completeness/", "/compare/",
                "/license/", "/faq/", "/changelog/",
-               "/en/", "/en/why/", "/en/sample/", "/en/steward/", "/en/gates/",
+               "/en/", "/en/help/", "/en/why/", "/en/sample/", "/en/steward/", "/en/gates/",
                "/en/monitor/", "/en/checkup/", "/en/threat-model/",
                "/en/completeness/", "/en/compare/", "/en/license/", "/en/faq/",
                "/en/changelog/"]
