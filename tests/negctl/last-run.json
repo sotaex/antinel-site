@@ -144,7 +144,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "253 KB｜段 127／页 128｜头部说明 6 行"
+      "detail": "254 KB｜段 127／页 128｜头部说明 6 行"
     },
     {
       "id": "N-15",
@@ -194,7 +194,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "锁 18ac9885db19… ｜ 待发布 c65ca397df37…"
+      "detail": "锁 49348a43751b… ｜ 待发布 d4584295b7d2…"
     },
     {
       "id": "N-20",

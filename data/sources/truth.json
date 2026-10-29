@@ -1,11 +1,11 @@
 {
   "schema": "antinel-truth/1",
-  "captured_at": "2026-10-29T06:01:14+08:00",
+  "captured_at": "2026-10-29T15:09:52+08:00",
   "src_path": "D:\\psl\\poc\\antinel-security",
-  "product_version": "0.60.2",
-  "rules_version": "0.60.2",
+  "product_version": "0.61.0",
+  "rules_version": "0.61.0",
   "rules_description": "Antinel Security Suite default detection rules (37 rules, 4 gates + canary/supply-chain families; flat layout: patterns at rule top level)",
-  "rules_sha256": "18ac9885db1997a10c141889bf56f0f3cee82d65561c50be8946bf6537d81408",
+  "rules_sha256": "49348a43751be7893663c83b40ab91a0ee86754b486b526625fc6a477731ff81",
   "gates": {
     "secrets": "Gate 2 sensitive surface",
     "network": "Gate 4 behavior (egress)",
