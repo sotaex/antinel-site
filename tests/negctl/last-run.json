@@ -1,9 +1,9 @@
 {
   "schema": "antinel-site-negctl/1",
-  "ran": 40,
-  "total": 40,
-  "pass": 40,
-  "baseline_criteria": 35,
+  "ran": 41,
+  "total": 41,
+  "pass": 41,
+  "baseline_criteria": 36,
   "note": "每条三步：基线全绿 → 注入后目标判据变红 → 还原后全绿",
   "details": [
     {
@@ -405,6 +405,16 @@
       "red_ok": true,
       "restore_ok": true,
       "detail": "被动候选 英文 126／125、中文 0（启发式：只许降）"
+    },
+    {
+      "id": "N-41",
+      "criterion": "J-36",
+      "desc": "页脚邮箱把协议串当站内路径",
+      "inject_ok": true,
+      "expect": "red",
+      "red_ok": true,
+      "restore_ok": true,
+      "detail": "协议错位 136：/ → /mailto:contact@antinel.com；/facts/ → /mailto:contact@antinel.com；/rules/ → /mailto:contact@antinel.com"
     }
   ]
 }

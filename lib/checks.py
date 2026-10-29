@@ -469,6 +469,24 @@ def run_all(pages, machine, truth, facts, outdir, check_only=False, ds_files=Non
         % (len(dead), len(noprefix), len(og_bad),
            ("：" + "；".join(og_bad[:3])) if og_bad else ""))
 
+    # J-36 协议前缀不许被拼在路径后面
+    # 为什么 J-14a 抓不全：它的「漏前缀」项只在 BASE_PATH 非空时才跑。
+    # 2026-10-29 的实例——页脚把 `mailto:contact@antinel.com` 当站内路径拼了前缀，
+    # 结果是 `/antinel-sitemailto:contact@antinel.com`。本地 BASE_PATH 为空时，
+    # 拼出来的就是正确的 `mailto:`，死链、漏前缀两项全绿；只有按部署口径跑才炸
+    # （136 页页脚邮箱全指向 404，CI 十二秒红掉，站点因此没发出去）。
+    # 这一条不依赖 BASE_PATH：只看 href 里协议串出现的位置是不是开头。
+    misproto = []
+    _PROTO = re.compile(r"(?:mailto:|tel:|https?://)")
+    for p in pages:
+        for href in re.findall(r'href="([^"]*)"', p["html"]):
+            m = _PROTO.search(href)
+            if m and m.start() != 0:
+                misproto.append("%s → %s" % (p["path"], href[:60]))
+    add("J-36", not misproto, "协议错位 %d%s"
+        % (len(misproto),
+           ("：" + "；".join(misproto[:3])) if misproto else ""))
+
     # J-15 llms-full
     nbytes = len(machine["full"].encode("utf-8"))
     secs = machine["full"].count("\n---\n\n# ")

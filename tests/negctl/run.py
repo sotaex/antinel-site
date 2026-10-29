@@ -437,6 +437,18 @@ def n40():
     append("content/en/help.md", "\nIn that case the ledger is checked twice.\n")
 
 
+def n41():
+    """页脚邮箱链接把协议串当站内路径（前缀会拼到 mailto: 前面）：J-36 必红。
+
+    2026-10-29 的真实事故形态。为什么非要有这一条：J-14a 的「漏前缀」
+    只在 BASE_PATH 非空时跑，本地口径下这个错拼出来恰好是对的字符串，
+    死链和漏前缀两项都绿，只有线上才炸。J-36 不依赖 BASE_PATH。
+    """
+    patch("lib/i18n.py",
+          '("mailto:contact@antinel.com", "contact@antinel.com"),',
+          '("/mailto:contact@antinel.com", "contact@antinel.com"),', count=2)
+
+
 CONTROLS = [
     ("N-01", "J-02", "robots 少一条爬虫令牌", n01),
     ("N-02", "J-03", "llms.txt 少一个分组", n02),
@@ -478,6 +490,7 @@ CONTROLS = [
     ("N-38", "J-33", "英文术语注解退回旧写法（括号把词切开）", n38),
     ("N-39", "J-35", "事实页的 evidence 不再标注实测／声明", n39),
     ("N-40", "J-34", "英文页多一句限定被动（存量只许降）", n40),
+    ("N-41", "J-36", "页脚邮箱把协议串当站内路径", n41),
 ]
 
 

@@ -130,9 +130,22 @@ def page(*, path, title, description, content, updated, version,
     base = C.BASE_PATH
     md_url = C.abs_url(path.rstrip("/") + "/index.md") if path != "/" else C.abs_url("/index.md")
     s = i18n.shell(lang)
-    nav = "\n".join('      <a href="%s%s">%s</a>' % (base, esc(href), esc(label))
+
+    def _href(href):
+        """站内路径才加前缀。绝对地址、mailto、锚点、协议相对地址一律原样。
+
+        为什么不能无条件拼：`mailto:` 一带前缀就变成
+        `/antinel-sitemailto:contact@antinel.com`——本地 BASE_PATH 为空时
+        完全看不出来（那串就是对的 `mailto:`），只有按部署口径跑才炸。
+        2026-10-29 线上就是这么坏的：页脚邮箱全站 136 页全指向 404。
+        """
+        if href.startswith(("http://", "https://", "mailto:", "#", "//", "tel:")):
+            return href
+        return base + href
+
+    nav = "\n".join('      <a href="%s">%s</a>' % (esc(_href(href)), esc(label))
                     for href, label in s["nav"])
-    foot = " · ".join('<a href="%s%s">%s</a>' % (base, esc(href), esc(label))
+    foot = " · ".join('<a href="%s">%s</a>' % (esc(_href(href)), esc(label))
                       for href, label in s["footer_links"])
     llms_url = C.abs_url("/llms-en.txt") if lang == i18n.EN else C.abs_url("/llms.txt")
     alt = alt or {}
