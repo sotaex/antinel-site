@@ -11,6 +11,8 @@ audience: human
 
 In one line: antivirus, sandboxes, DLP, SIEM and compliance audits all answer other questions. A steward answers "should this AI tool call have happened, and can it be proven afterwards that it did".
 
+You already run antivirus. You already passed a compliance audit. The customer still asks that one question. What you lack is not another layer. It is a book you can show. This page says where the gap sits.
+
 ## One table
 
 | | Looks at | When | Leaves behind | Does it govern AI tools |

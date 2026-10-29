@@ -202,11 +202,11 @@ WORDS = [
 # 不进清单，J-24～J-30 就只管中文站，英文页堆术语、写营销词、缺边界段全放过。
 HUMAN_PAGES = ["/", "/help/", "/why/", "/sample/", "/steward/", "/gates/", "/monitor/",
                "/checkup/", "/threat-model/", "/completeness/", "/compare/",
-               "/license/", "/faq/", "/changelog/",
+               "/license/", "/faq/", "/changelog/", "/who/", "/cost/", "/answers/",
                "/en/", "/en/help/", "/en/why/", "/en/sample/", "/en/steward/", "/en/gates/",
                "/en/monitor/", "/en/checkup/", "/en/threat-model/",
                "/en/completeness/", "/en/compare/", "/en/license/", "/en/faq/",
-               "/en/changelog/"]
+               "/en/changelog/", "/en/who/", "/en/cost/", "/en/answers/"]
 
 # 人读页必须出现的「边界」段：h2 命中任一关键词即算。
 # 这张表是词面清单，不是语义判断——所以宁可多收几种写法，也别让一条真的边界段

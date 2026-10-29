@@ -52,6 +52,9 @@ SEV_EN = {"critical": "critical (blocked on hit)", "warning": "warning (allowed,
 
 HAND = [
     ("help", "从哪开始", "按你现在的处境分流：第一次装、出了状况、要核对数字，各去哪一页。"),
+    ("who", "谁在做", "北京智侣科技有限公司；靠什么活着、出问题找谁、不做了你怎么办。"),
+    ("cost", "免费与付费", "个人永久免费，机构首批首年不计费此后永久五折；含三条承诺与五折边界。"),
+    ("answers", "客户会问你的五个问题", "一张答问卡：客户问到的时候，照着答，以及每句靠什么撑住。"),
     ("steward", "为什么叫监理", "监理＝按事先写好的标准把关、记录、必要时叫停的独立第三方（GB/T 19668 谱系）。"),
     ("gates", "四道门", "内容安全／敏感面／元数据与出联／行为，四道门各挡什么、挡不住什么。"),
     ("monitor", "数据外传监控六机制", "自认记录／出口记录／宿主拦截／诱饵文件／安全区／报告呈现，六种机制各管一段。"),
@@ -71,6 +74,12 @@ HAND = [
 HAND_EN = [
     ("help", "Where to start",
      "Pick the page that fits where you are: first install, something is off, or you want to check a number."),
+    ("who", "Who runs this",
+     "Beijing Zhilv Technology: how it earns, who to write to, and what happens if the project stops."),
+    ("cost", "Free and paid",
+     "Personal use is free forever. First institutions pay nothing for year one, then half. Promises and limits."),
+    ("answers", "Five questions your customer will ask",
+     "A card of answers for the moment the question comes, and what holds each sentence up."),
     ("steward", "Why we call it a steward",
      "A steward checks against written rules, records what it sees, and can stop an action."),
     ("gates", "The four gates",
@@ -266,7 +275,10 @@ def page_facts(facts, truth):
                        R.esc(c["evidence"])))
     body = ('<h1>事实总览</h1>\n<p class="lead">一句话：本页是 Antinel 监理全部核心事实的唯一权威清单。'
             '每条一个锚点，逐条给出复算来源。</p>\n'
-            '<p class="meta">产品版本 %s · 数据日期 %s · 引用请以本页为准</p>\n'
+            '<p class="note">这一页是给要复算的人看的。你只想判断要不要用，'
+            '看<a href="%s/why/">四分钟那页</a>。</p>\n'
+            % C.BASE_PATH
+            + '<p class="meta">产品版本 %s · 数据日期 %s · 引用请以本页为准</p>\n'
             '%s\n<p class="footnote">引用格式与许可见页脚。数值若与 <code>/datasets/</code> 下的'
             '机器可读文件不一致，以数据集为准。</p>' % (truth["product_version"], data_date,
                                                       "\n".join(rows)))
@@ -338,30 +350,42 @@ def page_why(truth, facts):
     body = (
         '<h1>给不看技术的人</h1>\n'
         '<p class="lead">这一页只用大白话，四分钟读完。看完你会知道三件事：'
-        '这事跟你有没有关系、它能给你什么、你要做什么。</p>\n'
+        '这事跟你有没有关系、你能拿到什么、你要让谁去做。</p>\n'
 
-        '<h2 id="q1">一、这事跟你有没有关系</h2>\n'
-        '<p>你的团队在用 AI 写代码、写文案、做表。这些工具要在你电脑上读文件、跑命令，'
-        '才能把活干完。</p>\n'
+        '<h2 id="q0">一、对上一条，就往下看</h2>\n'
+        '<ul>'
+        '<li>客户、招标文件、或者一次审计，问你要「开发机上数据外发的管控说明」，'
+        '你手上没有。</li>'
+        '<li>有人（或者你自己）在电脑上用 AI 工具写代码、处理客户资料，'
+        '你不知道它往外发了什么。</li>'
+        '<li>同行出过一次事，你想知道自己这台机器上有没有同样的痕迹。</li>'
+        '</ul>\n'
+        '<p>三条都对不上，这一页可以不用看。</p>\n'
+
+        '<h2 id="q1">二、这事跟你有没有关系</h2>\n'
+        '<p>你的团队在用 AI 写代码、写文案、做表。这些工具要在你电脑上读文件、'
+        '跑命令，才能把活干完。</p>\n'
         '<p>它们读得对不对，现在没人说得清。你的电脑上没有一本账。</p>\n'
         '<p>于是有一种场面：客户或领导问一句「我们的资料会不会外流」，'
         '你答不上来。不是因为你没管，是因为你手上没有记录。</p>\n'
         '<p>这一页讲的工具，就是给你补上这本账。</p>\n'
 
-        '<h2 id="q2">二、它到底做什么</h2>\n'
+        '<h2 id="q2">三、它到底做什么</h2>\n'
         '<p>它做三件事，都很朴素。</p>\n'
         '<dl class="qa">'
         '<dt>记</dt>'
         '<dd>每次 AI 工具要读文件、删文件、连网络，它记一条。记在你自己电脑上。</dd>'
         '<dt>拦</dt>'
-        '<dd>碰到最危险的那几类动作（比如读你的密钥文件、删你的项目），它当场拦下，不让做。</dd>'
+        '<dd>碰到最危险的那几类动作（比如读你的密钥文件、删你的项目），'
+        '它当场拦下，不让做。</dd>'
         '<dt>出纸</dt>'
-        '<dd>你要交差的时候，它出一页纸：这台电脑上每个工具，有没有自己记下「上传过」。</dd>'
+        '<dd>你要交差的时候，它出一页纸：每个工具一个结论。'
+        '有证据就点名，没证据就写「没查到」。</dd>'
         '</dl>\n'
         '<p>它不改你的文件，不改你的代码，不碰你的业务。'
         '它只在你电脑上跑，自己不上网，结果不出这台电脑。</p>\n'
 
-        '<h2 id="q3">三、凭什么信</h2>\n'
+        '<h2 id="q3">四、凭什么信</h2>\n'
         '<p>不要信我们的说法。信这三件你能自己做的事。</p>\n'
         '<ul>'
         '<li><strong>账本改不了。</strong>每条记录带一个指纹，改一个字节就能算出来。'
@@ -374,56 +398,65 @@ def page_why(truth, facts):
         '<p>还有一条更像实话的：我们不卖「认证」，不收「通过费」，'
         '也不接「帮我过检」的活。判断和收费分开，结论才站得住。</p>\n'
 
-        '<h2 id="q4">四、它做不到什么</h2>\n'
+        '<h2 id="q4">五、它做不到什么</h2>\n'
         '<p>这一段放在这里，不放在页脚。</p>\n'
         '<ul>'
-        '<li>有人把危险操作写进脚本再执行，它拦不住。会有记录，但不会阻止。</li>'
-        '<li>它不做隔离。要物理隔离，用容器或虚拟机。</li>'
-        '<li>它只认识登记过的 %s 类 AI 工具。没登记的工具，它拿不到记录。</li>'
-        '<li>它出的不是检验检测报告，没有法律效力。要那种报告，找有资质的机构。</li>'
+        '<li>有人把危险动作写进程序再跑，它只记录、不拦。要拦，把它关起来，或者收掉它的权限。</li>'
+        '<li>它不做隔离。要隔离，用虚拟机。</li>'
+        '<li>它只认识登记过的那 %s 类 AI 工具。没登记的，它找不到记录。</li>'
+        '<li>它出的不是检测报告，没有法律效力。要那种报告，找有资质的机构。</li>'
         '</ul>\n'
 
-        '<h2 id="q5">五、你要做什么</h2>\n'
-        '<p>两步。先查一次，再看结果。</p>\n'
+        '<h2 id="q5">六、你要让谁去做</h2>\n'
+        '<p>你自己不必动手。三步，都是别人的动作。</p>\n'
         '<ol>'
-        '<li><strong>查一次。</strong>在电脑上跑 <code>antinel ui</code>，'
-        '浏览器点一下。一到两分钟出结果。只读，不改任何东西。</li>'
-        '<li><strong>看结果。</strong>如果出现「它自己记着：发出去过」，'
-        '就值得往下查。如果全是「查过了，没找到记录」，你至少有了一个能说的答案。</li>'
+        '<li><strong>找一个人。</strong>技术负责人、外包的运维、或者你自己公司的 IT。'
+        '把<a href="%s/#forward">首页那段话</a>整段发给他，他一看就知道怎么做。</li>'
+        '<li><strong>收一页纸。</strong>出现「它自己记着：发出去过」，就值得往下查。</li>'
+        '<li><strong>用这张纸。</strong>答复客户、放进投标附件、留档。'
+        '它是工程记录，不是法律意见，也不替代检测报告。</li>'
         '</ol>\n'
         '<p class="cta"><a class="btn primary" href="%s/docs/quickstart/">两分钟查一次</a>'
         '<a class="btn" href="%s/sample/">先看一页样例</a></p>\n'
 
-        '<h2 id="q6">六、谁不需要它</h2>\n'
+        '<h2 id="q6">七、谁不需要它</h2>\n'
         '<p>三种人可以先不用。第一种，只用 AI 聊天、不在电脑上跑 AI 工具的人。'
-        '第二种，已经把 AI 工具关在容器里、并且有网络出口管控的人。'
-        '第三种，需要法律效力报告、不需要工程记录的人。</p>\n'
-        % (v["rules"], f["F-003"]["value"]["hosts"], C.BASE_PATH, C.BASE_PATH))
+        '第二种，已经把 AI 工具关在隔离环境里、并且堵住了它往外连网的人。'
+        '第三种，需要能拿去打官司的报告、不需要工程记录的人。</p>\n'
+        '<p>「监理」这个词借的是把关和记账的做法，不是法定的签字责任。'
+        '展开在<a href="%s/steward/">为什么叫监理</a>。</p>\n'
+        % (v["rules"], f["F-003"]["value"]["hosts"], C.BASE_PATH,
+           C.BASE_PATH, C.BASE_PATH, C.BASE_PATH))
 
     md = ["# 给不看技术的人", "",
           "这一页只用大白话，四分钟读完。", "",
-          "## 一、这事跟你有没有关系", "",
+          "## 一、对上一条，就往下看", "",
+          "- 客户、招标、审计问你要「开发机上数据外发的管控说明」，你手上没有。",
+          "- 有人在电脑上用 AI 工具处理客户资料，你不知道它往外发了什么。",
+          "- 同行出过一次事，你想知道自己这台机器上有没有同样的痕迹。", "",
+          "## 二、这事跟你有没有关系", "",
           "你的团队在用 AI 写代码、写文案、做表。这些工具要在你电脑上读文件、跑命令，才能把活干完。",
           "", "它们读得对不对，现在没人说得清。你的电脑上没有一本账。", "",
           "客户或领导问一句「我们的资料会不会外流」，你答不上来。"
           "不是因为你没管，是因为你手上没有记录。", "",
-          "## 二、它到底做什么", "",
+          "## 三、它到底做什么", "",
           "- **记**：每次读文件、删文件、连网络，记一条，记在你自己电脑上。",
           "- **拦**：最危险的那几类动作当场拦下，不让做。",
-          "- **出纸**：要交差的时候，出一页纸。", "",
-          "## 三、凭什么信", "",
+          "- **出纸**：要交差的时候，出一页纸，每个工具一个结论。", "",
+          "## 四、凭什么信", "",
           "- 账本改不了：每条记录带指纹，`antinel verify` 一条命令查。",
           "- 结论可以被推翻：你自己跑一遍，系统认你的结论。",
           "- 标准公开：%d 条规则写在公开文件里。" % v["rules"], "",
-          "## 四、它做不到什么", "",
-          "- 写进脚本再执行，拦不住（有记录）。",
+          "## 五、它做不到什么", "",
+          "- 写进脚本再执行，只记录不阻止。要阻止，用容器或权限隔离。",
           "- 不做隔离，要隔离用容器。",
           "- 只认识登记过的 %d 类 AI 工具。" % f["F-003"]["value"]["hosts"],
           "- 不是检验检测报告，没有法律效力。", "",
-          "## 五、你要做什么", "",
-          "1. 跑 `antinel ui`，浏览器点一下，一到两分钟。",
-          "2. 看结果。出现「发出去过」就往下查；全是「没找到记录」，你也有了能说的答案。", "",
-          "## 六、谁不需要它", "",
+          "## 六、你要让谁去做", "",
+          "1. 找一个人：技术负责人、外包运维、或者你自己的 IT。把首页那段话发给他。",
+          "2. 收一页纸。出现「它自己记着：发出去过」，就往下查。",
+          "3. 用这张纸：答复客户、放进投标附件、留档。", "",
+          "## 七、谁不需要它", "",
           "只用 AI 聊天、不在电脑上跑工具的人；已经把工具关在容器里并有出口管控的人；"
           "需要法律效力报告的人。", ""]
     return body, "\n".join(md)
@@ -771,13 +804,20 @@ def page_index(truth, facts):
 
     body = (
         '<section class="hero">\n'
+        '<p class="kicker">装修你请监理盯施工队。AI 工具在你电脑上干活，也一样。</p>\n'
         '<h1>客户问你「我们的资料会不会外流」，<br>你现在拿得出什么？</h1>\n'
-        '<p class="lead">装上 Antinel 监理，一到两分钟出一页纸：这台电脑上每个 AI 工具，'
-        '有没有自己记下「上传过」。本地跑，不联网，结果不出这台电脑。</p>\n'
+        '<p class="lead">AI 工具要在你电脑上读文件、跑命令，才能把活干完。'
+        '它读了什么、往外发了什么，你现在没有一本账。'
+        'Antinel 监理补上这本账：两分钟出一页纸，每个工具一个结论。'
+        '有证据就点名，没证据就说没查到。这两件事不混。'
+        '本地跑，不联网，结果不出这台电脑。</p>\n'
         '<p class="cta"><a class="btn primary" href="%s/docs/quickstart/">两分钟查一次</a>'
-        '<a class="btn" href="%s/sample/">先看一页样例</a></p>\n'
-        '<p class="hero-meta">免费开源 ｜ <code>pip install antinel</code> ｜ '
-        '不改变你现在的用法</p>\n'
+        '<a class="btn" href="%s/sample/">先看一页纸长什么样</a></p>\n'
+        '<p class="hero-meta">软件免费开源 ｜ 装五分钟、查一两分钟 ｜ 不改你现在的用法 ｜ '
+        '不上传任何东西</p>\n'
+        '<p class="note">三类人不必往下看。只用 AI 聊天、不在电脑上跑 AI 工具的，不用装。'
+        '已经把 AI 工具关在隔离环境里、并且堵住了它往外连网的，也不用。'
+        '需要能拿去打官司的检测报告的，去找有那个资质的机构。</p>\n'
         '</section>\n'
 
         '<section class="asks">\n'
@@ -792,8 +832,19 @@ def page_index(truth, facts):
         '</dl>\n'
         '</section>\n'
 
+        '<section class="forward" id="forward">\n'
+        '<h2>你不装也行：把这段发给技术负责人</h2>\n'
+        '<p>下面这段没有命令，你不需要懂任何东西。整段复制，发给他。</p>\n'
+        '<blockquote>'
+        '<p>我们电脑上在用 AI 编程工具。麻烦你查一下：这几台机器上，AI 工具过去有没有把文件传出去过。</p>'
+        '<p>有个开源工具叫 Antinel 监理，本地跑、不上传数据，装大约五分钟，查一次一两分钟，出一页纸。</p>'
+        '<p>装完把那一页给我就行。如果出现「它自己记着：发出去过」，咱们再细说。</p>'
+        '<p>我要的就一样东西：一页纸，能打印、能留档。</p>'
+        '</blockquote>\n'
+        '</section>\n'
+
         '<section class="quick">\n'
-        '<h2>三步，五分钟</h2>\n'
+        '<h2>三步，装五分钟</h2>\n'
         '<div class="code-wrap"><pre><code>pip install antinel\n'
         'antinel install     # 接上检查点，然后重启一次 AI 工具\n'
         'antinel ui          # 浏览器点一下，看这台电脑有没有被带走东西</code></pre></div>\n'
@@ -802,12 +853,17 @@ def page_index(truth, facts):
         '</section>\n'
 
         '<section class="edge">\n'
-        '<h2>它拦不住什么</h2>\n'
-        '<p>这一段放在最前面，不放在页脚。</p>\n'
+        '<h2 id="edge">什么时候它不适用（以及该找谁）</h2>\n'
+        '<p>这一段放在前面，不放在页脚。你要的事如果落在这几条里，就去找后面写的那家。</p>\n'
         '<ul>'
-        '<li>把危险操作写进脚本再执行，它拦不住。会有记录，但不会阻止。</li>'
-        '<li>它不做隔离。要物理隔离，用容器或虚拟机。</li>'
-        '<li>它只认识登记过的 %s 类 AI 工具。没登记的工具，它没有取证路径。</li>'
+        '<li><strong>你要当场挡住「把危险动作写进程序再跑」这种。</strong>它只记录、不阻止。'
+        '要挡住，把它关进隔离环境，或者收掉它的权限。</li>'
+        '<li><strong>你要把整台机器彻底隔开。</strong>这一点它做不到。'
+        '用虚拟机，或者另找一台机器。</li>'
+        '<li><strong>你要查的工具不在登记的那 %s 类里。</strong>它找不到记录。'
+        '先去安全体检看看有没有别的办法；确实没有，它帮不了你。</li>'
+        '<li><strong>你要能拿去打官司的报告。</strong>它出的是一页工程记录，没有法律效力。'
+        '去找有资质的检测机构。</li>'
         '</ul>\n'
         '</section>\n'
 
@@ -859,22 +915,31 @@ def page_index(truth, facts):
     md = ["# Antinel 监理", "",
           "客户问你「我们的资料会不会外流」，你现在拿得出什么？",
           "",
-          "装上 Antinel 监理，一到两分钟出一页纸：这台电脑上每个 AI 工具，"
-          "有没有自己记下「上传过」。本地跑，不联网，结果不出这台电脑。", "",
+          "AI 工具要在你电脑上读文件、跑命令，才能把活干完。它读了什么、往外发了什么，"
+          "你现在没有一本账。Antinel 监理补上这本账：两分钟出一页纸，每个工具一个结论。"
+          "有证据就点名，没证据就说没查到。这两件事不混。", "",
           "## 你会问三件事", "",
           "- **我的资料出去了吗**：每个工具给一个结论。有记录就说有，没查到就说没查到。",
           "- **是谁发出去的**：点名到具体工具，附上它自己写下的那条记录。",
           "- **我拿什么交差**：一页纸，能打印，能转发。", "",
-          "## 三步，五分钟", "",
+          "## 你不装也行：把这段发给技术负责人", "",
+          "我们电脑上在用 AI 编程工具。麻烦你查一下：这几台机器上，"
+          "AI 工具过去有没有把文件传出去过。",
+          "",
+          "有个开源工具叫 Antinel 监理，本地跑、不上传数据，"
+          "装大约五分钟，查一次一两分钟，出一页纸。",
+          "",
+          "装完把那一页给我就行。如果出现「它自己记着：发出去过」，咱们再细说。", "",
+          "## 三步，装五分钟", "",
           "```",
           "pip install antinel",
           "antinel install     # 接上检查点，然后重启一次 AI 工具",
           "antinel ui          # 浏览器点一下，看这台电脑有没有被带走东西",
           "```", "",
-          "## 它拦不住什么", "",
-          "- 把危险操作写进脚本再执行，它拦不住。会有记录，但不会阻止。",
-          "- 它不做隔离。要物理隔离，用容器或虚拟机。",
-          "- 它只认识登记过的 %d 类 AI 工具。" % f["F-003"]["value"]["hosts"], "",
+          "## 什么时候它不适用（以及该找谁）", "",
+          "- 你要当场挡住写进脚本的危险操作：它只记录、不阻止。要挡住，用容器或权限隔离。",
+          "- 你要物理隔离：它不做隔离。用容器或虚拟机。",
+          "- 你要查的工具不在登记的 %d 类里：它拿不到记录。" % f["F-003"]["value"]["hosts"], "",
           "## 你可以自己验的三件事", "",
           "- `antinel verify`：查流水账有没有被动过。",
           "- 自己算一遍：你的结论可以取代我们的结论，原记录不删不改。",
@@ -1055,7 +1120,11 @@ def page_facts_en(facts, truth):
             '<p class="lead">This page is the single list of core facts about '
             'Antinel Steward. One anchor per fact, with the source you can '
             're-compute it from.</p>\n'
-            '<p class="meta">Product version %s · data date %s · cite this page</p>\n'
+            '<p class="note">This page serves the reader who wants to re-run the '
+            'numbers. If you only want to decide whether to use it, read the '
+            '<a href="%s/en/why/">four-minute page</a>.</p>\n'
+            % C.BASE_PATH
+            + '<p class="meta">Product version %s · data date %s · cite this page</p>\n'
             '%s\n<p class="footnote">For the citation format and the license, see '
             'the page footer. If a number here disagrees with the machine-readable '
             'files under <code>/en/datasets/</code>, the datasets win.</p>'
@@ -1239,15 +1308,22 @@ def page_index_en(truth, facts):
 
     body = (
         '<section class="hero">\n'
+        '<p class="kicker">You hire a steward for a building site. '
+        'AI tools work on your machine the same way.</p>\n'
         '<h1>A customer asks "could our data leak out".<br>What do you put on the table?</h1>\n'
-        '<p class="lead">Install Antinel and get a one-page report in one to two '
-        'minutes. For every AI tool on this machine: did it write down that it '
-        'uploaded something. It runs on your machine, stays off the network, and '
-        'the result never leaves it.</p>\n'
+        '<p class="lead">An AI tool reads files and runs commands on your machine. '
+        'That is how the work gets done. What it read and what it sent out has no record today. '
+        'Antinel keeps that record: one page in two minutes, one conclusion per tool. '
+        'A record means we name it. No record means we say we did not find one. '
+        'We never merge the two. It runs on your machine and stays off the network.</p>\n'
         '<p class="cta"><a class="btn primary" href="%s/docs/quickstart/">Run one check</a>'
-        '<a class="btn" href="%s/sample/">See a sample page</a></p>\n'
-        '<p class="hero-meta">Free and open source ｜ <code>pip install antinel</code> ｜ '
-        'it does not change how you work</p>\n'
+        '<a class="btn" href="%s/sample/">See the one-pager</a></p>\n'
+        '<p class="hero-meta">Free and open source ｜ five minutes to install ｜ '
+        'it does not change how you work ｜ nothing leaves your machine</p>\n'
+        '<p class="note">Three groups can stop reading. If you only chat with AI and never '
+        'run a tool on your machine, you do not need this. If your tools already sit in a '
+        'container with a guarded network exit, you do not need this either. '
+        'If you need a report with legal force, go to an accredited testing body.</p>\n'
         '</section>\n'
 
         '<section class="asks">\n'
@@ -1264,8 +1340,22 @@ def page_index_en(truth, facts):
         '</dl>\n'
         '</section>\n'
 
+        '<section class="forward" id="forward">\n'
+        '<h2>You do not have to install it: send this to your technical lead</h2>\n'
+        '<p>The paragraph below has no commands in it. Copy the whole thing and send it.</p>\n'
+        '<blockquote>'
+        '<p>We run AI coding tools on our machines. Please check one thing: did any of these '
+        'tools send a file out in the past.</p>'
+        '<p>There is an open source tool called Antinel Steward. It runs locally and uploads '
+        'nothing. Install takes about five minutes, a check takes one or two, and it gives one page.</p>'
+        '<p>Send me that page when you have it. If it says "it recorded that it sent", '
+        'we will take it from there.</p>'
+        '<p>All I need is one page that I can print and keep on file.</p>'
+        '</blockquote>\n'
+        '</section>\n'
+
         '<section class="quick">\n'
-        '<h2>Three steps, five minutes</h2>\n'
+        '<h2>Three steps, five minutes to install</h2>\n'
         '<div class="code-wrap"><pre><code>pip install antinel\n'
         'antinel install     # attach the checkpoint, then restart the AI tool once\n'
         'antinel ui          # click in a browser: did this machine give anything away</code></pre></div>\n'
@@ -1276,15 +1366,19 @@ def page_index_en(truth, facts):
         '</section>\n'
 
         '<section class="edge">\n'
-        '<h2>What it cannot stop</h2>\n'
-        '<p>We put this near the top, not in the footer.</p>\n'
+        '<h2 id="edge">When it does not apply, and who to ask instead</h2>\n'
+        '<p>We put this near the top, not in the footer. If your need sits in this list, '
+        'go to the party named after it.</p>\n'
         '<ul>'
-        '<li>Someone who writes a dangerous action into a script and runs the script '
-        'gets past it. There will be a record. The action is not stopped.</li>'
-        '<li>It does not isolate anything. For real isolation, use a container or a '
-        'virtual machine.</li>'
-        '<li>It knows the %s kinds of AI tools on its register. For a tool that is '
-        'not on it, there is no way to collect records.</li>'
+        '<li><strong>You need a dangerous scripted action stopped on the spot.</strong> '
+        'It records, it does not block. To block, use a container or system permissions.</li>'
+        '<li><strong>You need physical isolation.</strong> It isolates nothing. '
+        'Use a container or a virtual machine.</li>'
+        '<li><strong>The tool you care about is not on the register of %s kinds.</strong> '
+        'It cannot collect records. Try the checkup for another way in. '
+        'If there is none, this tool cannot help you.</li>'
+        '<li><strong>You need a report that holds up in court.</strong> '
+        'Ours is an engineering record with no legal force. Go to an accredited testing body.</li>'
         '</ul>\n'
         '</section>\n'
 
@@ -1342,21 +1436,30 @@ def page_index_en(truth, facts):
     md = ["# Antinel Steward", "",
           "A customer asks \"could our data leak out\". What do you put on the table?",
           "",
-          "Install Antinel and get a one-page report in one to two minutes.", "",
+          "An AI tool reads files and runs commands on your machine. What it read and "
+          "what it sent out has no record today. Antinel keeps that record: one page in "
+          "two minutes, one conclusion per tool.", "",
           "## You will ask three things", "",
           "- **Did my data go out**: every tool gets one verdict.",
           "- **Which tool sent it**: we name the tool and attach the record it wrote.",
           "- **What do I hand over**: one page you can print and forward.", "",
-          "## Three steps, five minutes", "",
+          "## You do not have to install it: send this to your technical lead", "",
+          "We run AI coding tools on our machines. Please check one thing: did any of "
+          "these tools send a file out in the past.",
+          "",
+          "There is an open source tool called Antinel Steward. It runs locally and "
+          "uploads nothing. Install takes about five minutes, a check takes one or two, and it gives "
+          "one page.", "",
+          "## Three steps, five minutes to install", "",
           "```",
           "pip install antinel",
           "antinel install     # attach the checkpoint, then restart the AI tool once",
           "antinel ui          # click in a browser: did this machine give anything away",
           "```", "",
-          "## What it cannot stop", "",
-          "- Someone who writes a dangerous action into a script gets past it.",
-          "- It does not isolate anything.",
-          "- It knows the %d kinds of AI tools on its register."
+          "## When it does not apply, and who to ask instead", "",
+          "- You need a dangerous scripted action stopped: it records, it does not block.",
+          "- You need physical isolation: it isolates nothing. Use a container.",
+          "- The tool you care about is not on the register of %d kinds."
           % f["F-003"]["value"]["hosts"], "",
           "## Three things you can check yourself", "",
           "- `antinel verify`: see if the log was touched.",
@@ -1381,21 +1484,32 @@ def page_why_en(truth, facts):
     v = f["F-001"]["value"]
     body = (
         '<h1>For people who do not read code</h1>\n'
-        '<p class="lead">This page uses plain words. Four minutes. When you finish '
-        'you will know three things: whether this is about you, what it gives you, '
-        'and what you have to do.</p>\n'
+        '<p class="lead">This page uses plain words. Four minutes. When you finish, '
+        'three things are clear: whether this concerns you, what you get, and who has '
+        'to do the work.</p>\n'
 
-        '<h2 id="q1">1. Is this about you</h2>\n'
+        '<h2 id="q0">1. Three situations. If one is yours, read on</h2>\n'
+        '<ul>'
+        '<li>A customer, a tender, or an audit asks you how you control data leaving '
+        'developer machines. You hold nothing.</li>'
+        '<li>Someone, maybe you, runs AI tools on a machine to write code and handle '
+        'customer material. You do not know what those tools send out.</li>'
+        '<li>A peer had an incident. You want to know whether this machine shows the '
+        'same trace.</li>'
+        '</ul>\n'
+        '<p>None of the three? You can stop here.</p>\n'
+
+        '<h2 id="q1">2. Is this about you</h2>\n'
         '<p>Your team uses AI to write code, write copy, and build spreadsheets. '
-        'Those tools have to read files and run commands on your machine before '
-        'they can finish the work.</p>\n'
+        'Those tools read files and run commands on your machine, or the work does '
+        'not get done.</p>\n'
         '<p>Nobody can say today what they read. Your machine keeps no book of it.</p>\n'
-        '<p>So there is a moment like this: a customer or your boss asks "could our '
-        'data leak out", and you have no answer. Not because you did nothing. '
-        'Because you hold no records.</p>\n'
-        '<p>The tool on this page gives you that book.</p>\n'
+        '<p>So a moment comes: a customer or your boss asks whether your data can '
+        'leak out, and you have no answer. Not because you did nothing. Because you '
+        'hold no records.</p>\n'
+        '<p>The tool on this page keeps that book.</p>\n'
 
-        '<h2 id="q2">2. What it actually does</h2>\n'
+        '<h2 id="q2">3. What it does</h2>\n'
         '<p>It does three plain things.</p>\n'
         '<dl class="qa">'
         '<dt>Record</dt>'
@@ -1405,68 +1519,72 @@ def page_why_en(truth, facts):
         '<dd>For the most dangerous kinds of action, like reading your key files '
         'or deleting your project, it blocks the action on the spot.</dd>'
         '<dt>Hand you a page</dt>'
-        '<dd>When you have to show your work, it prints one page: for every tool '
-        'on this machine, did it write down that it uploaded something.</dd>'
+        '<dd>When you have to show your work, it gives one page with one conclusion '
+        'per tool. We name every record. With no record, the page says not checked.</dd>'
         '</dl>\n'
         '<p>Your files stay as they are. Your code stays as it is. Your business '
-        'is not touched. It runs on your machine, it does not go online itself, '
-        'and the result does not leave this machine.</p>\n'
+        'stays out of it. It runs on your machine, it goes nowhere itself, and the '
+        'result stays on this machine.</p>\n'
 
-        '<h2 id="q3">3. Why you can believe it</h2>\n'
+        '<h2 id="q3">4. Why you can believe it</h2>\n'
         '<p>Do not believe what we say. Believe these three things you can do '
         'yourself.</p>\n'
         '<ul>'
-        '<li><strong>The book cannot be edited.</strong> Every line carries a '
-        'fingerprint. Change one byte and it shows. One command does it: '
+        '<li><strong>The book resists editing.</strong> Every line carries a '
+        'fingerprint. Change one byte and the check shows it. One command: '
         '<code>antinel verify</code>.</li>'
-        '<li><strong>The verdict can be overturned.</strong> Run it yourself, get '
-        'a different answer, and the system takes yours, not ours. The lines it '
-        'already wrote stay in place. Nothing is rewritten to make the picture '
-        'look better.</li>'
+        '<li><strong>Your answer wins.</strong> Run the check yourself. A different '
+        'conclusion replaces ours, and the lines already written stay in place. '
+        'Nothing is rewritten to make the picture look better.</li>'
         '<li><strong>The bar is public.</strong>All %s check rules sit in a public '
-        'file. If a rule is too loose or too tight for the work you do, edit that '
-        'line and run the numbers again.</li>'
+        'file. Too loose or too tight for your work, edit that line and run the '
+        'numbers again.</li>'
         '</ul>\n'
-        '<p>One more thing that sounds more like the truth: we do not sell a '
-        '"certification". We do not charge a "passage fee". We do not take work '
-        'that says "help us pass". Judgement and money stay apart, or the verdict '
-        'is worth nothing.</p>\n'
+        '<p>One more thing that sounds more like the truth: we sell no '
+        '"certification". We charge no "passage fee". We take no work that says '
+        '"help us pass". Judgement and money stay apart, or the conclusion is worth '
+        'nothing.</p>\n'
 
-        '<h2 id="q4">4. What it cannot do</h2>\n'
+        '<h2 id="q4">5. What it cannot do</h2>\n'
         '<p>We put this here, not in the footer.</p>\n'
         '<ul>'
-        '<li>If a person writes a dangerous action into a script and then runs the '
-        'script, the checkpoint sees the script start. It does not see the action '
-        'inside the script. A record lands. The action still goes through.</li>'
-        '<li>It puts a guard rail next to the tool. It does not build a wall. When '
-        'you need a wall, use a container or a virtual machine.</li>'
-        '<li>It knows %s kinds of AI tools because those are the ones on its '
-        'register. A tool that is not on the register leaves no records to '
-        'collect.</li>'
+        '<li>Someone writes a dangerous action into a script and runs the script. The '
+        'checkpoint sees the script start, not the action inside it. A record lands. '
+        'The action still goes through. To block it, use a container or permissions.</li>'
+        '<li>It builds no wall. It watches one tool. When you need a wall, use a '
+        'container or a virtual machine.</li>'
+        '<li>It knows %s kinds of AI tools, because those are the ones on its '
+        'register. For a tool off the register, it has no records to collect.</li>'
         '<li>What it prints is an engineering record. It is not a report from a '
-        'qualified inspection body, and it carries no legal weight. For that kind '
-        'of report, go to a body with the qualification.</li>'
+        'qualified inspection body, and it carries no legal weight. For that report, '
+        'go to a body with the qualification.</li>'
         '</ul>\n'
 
-        '<h2 id="q5">5. What you do</h2>\n'
-        '<p>Two steps. Run one check, then read the result.</p>\n'
+        '<h2 id="q5">6. Who has to do the work</h2>\n'
+        '<p>You do not have to do it yourself. Three steps, all of them someone '
+        'else.</p>\n'
         '<ol>'
-        '<li><strong>Run one check.</strong>On your machine, run '
-        '<code>antinel ui</code>. Click in a browser. One to two minutes for a '
-        'result. Read-only. Nothing changes.</li>'
-        '<li><strong>Read the result.</strong>If you see "it recorded that it '
-        'sent", that is worth a closer look. If everything says "checked, no '
-        'record found", you at least have an answer you can say out loud.</li>'
+        '<li><strong>Pick one person.</strong> Your technical lead, the outsourced '
+        'ops, or your own IT. Send them the paragraph on the '
+        '<a href="%s/#forward">front page</a>. One read and they know the drill.</li>'
+        '<li><strong>Take one page.</strong> If it says "it recorded that it sent", '
+        'that deserves a closer look.</li>'
+        '<li><strong>Use the page.</strong> Answer a customer, attach it to a tender, '
+        'keep it on file. It is an engineering record, not legal advice, and it does '
+        'not replace a test report.</li>'
         '</ol>\n'
         '<p class="cta"><a class="btn primary" href="%s/docs/quickstart/">Run the check</a>'
         '<a class="btn" href="%s/sample/">Look at the sample page</a></p>\n'
 
-        '<h2 id="q6">6. Who does not need it</h2>\n'
-        '<p>You do not need it if all three are true. You run no AI tools on this '
-        'machine. The machine holds nothing a customer would ask about. Nobody '
-        'will ever ask you to show your work. If one of those is false, run one '
-        'check and see.</p>\n'
-        % (v["rules"], f["F-003"]["value"]["hosts"], C.BASE_PATH, C.BASE_PATH))
+        '<h2 id="q6">7. Who does not need it</h2>\n'
+        '<p>Three groups can stop here. You only chat with AI and run no tool on '
+        'this machine. Your tools sit in a container with a guarded network exit. '
+        'You need a report with legal force, not an engineering record.</p>\n'
+        '<p>The word "steward" borrows a way of working: check against a written '
+        'bar, keep the record, stop the action. It claims no statutory signature. '
+        'The full story sits on <a href="%s/steward/">why we call it a steward</a>.</p>\n'
+        % (v["rules"], f["F-003"]["value"]["hosts"], C.BASE_PATH,
+           C.BASE_PATH, C.BASE_PATH, C.BASE_PATH))
     return body, ""
 
 

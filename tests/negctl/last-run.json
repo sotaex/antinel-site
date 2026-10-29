@@ -34,7 +34,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "页 130，异常 130：/(缺link)、/facts/(缺link)、/rules/(缺link)"
+      "detail": "页 136，异常 136：/(缺link)、/facts/(缺link)、/rules/(缺link)"
     },
     {
       "id": "N-04",
@@ -74,7 +74,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "sitemap 131 条，页 130 条，差 1"
+      "detail": "sitemap 137 条，页 136 条，差 1"
     },
     {
       "id": "N-08",
@@ -84,7 +84,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 130：/(front-matter 缺字段)、/facts/(front-matter 缺字段)、/rules/(front-matter 缺字段)"
+      "detail": "异常 136：/(front-matter 缺字段)、/facts/(front-matter 缺字段)、/rules/(front-matter 缺字段)"
     },
     {
       "id": "N-09",
@@ -94,7 +94,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 124：/facts/(@type=Thing)、/rules/(@type=Thing)、/rules/sec-01/(@type=Thing)"
+      "detail": "异常 130：/facts/(@type=Thing)、/rules/(@type=Thing)、/rules/sec-01/(@type=Thing)"
     },
     {
       "id": "N-10",
@@ -114,7 +114,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "异常 130：/ 缺 sha256:b71e5、/facts/ 缺 sha256:b71e5、/rules/ 缺 sha256:b71e5"
+      "detail": "异常 136：/ 缺 sha256:b71e5、/facts/ 缺 sha256:b71e5、/rules/ 缺 sha256:b71e5"
     },
     {
       "id": "N-12",
@@ -144,7 +144,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "263 KB｜段 129／页 130｜头部说明 6 行"
+      "detail": "278 KB｜段 135／页 136｜头部说明 6 行"
     },
     {
       "id": "N-15",
@@ -294,7 +294,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "镜像 中 65／英 64｜缺对应 中 1 英 0｜lang 错 0｜数字跨语言冲突 0"
+      "detail": "镜像 中 68／英 67｜缺对应 中 1 英 0｜lang 错 0｜数字跨语言冲突 0"
     },
     {
       "id": "N-30",
@@ -304,7 +304,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "镜像 中 65／英 65｜缺对应 中 0 英 0｜lang 错 0｜数字跨语言冲突 1"
+      "detail": "镜像 中 68／英 68｜缺对应 中 0 英 0｜lang 错 0｜数字跨语言冲突 1"
     },
     {
       "id": "N-31",
@@ -354,7 +354,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "页 56／事实 12／规则 0／llms 2648 字节"
+      "detail": "页 62／事实 12／规则 0／llms 2648 字节"
     },
     {
       "id": "N-36",
@@ -404,7 +404,7 @@
       "expect": "red",
       "red_ok": true,
       "restore_ok": true,
-      "detail": "被动候选 英文 127／126、中文 0（启发式：只许降）"
+      "detail": "被动候选 英文 126／125、中文 0（启发式：只许降）"
     }
   ]
 }
